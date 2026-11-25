@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETTC BZA</title>
+<style>
+  :root{
+    --bg: #14181c;
+    --panel: #1c2228;
+    --panel-2: #222a31;
+    --border: #2c363f;
+    --text: #edf1f4;
+    --muted: #8b98a3;
+    --amber: #e0983c;
+    --amber-dim: #7a5a2c;
+    --green: #4fae6d;
+    --green-dim: #274a35;
+    --red: #d9534f;
+    --red-dim: #4d2a29;
+    --sel-bg: #2a2110;
+    --ok-bg: #122a1c;
+    --bad-bg: #2a1615;
+    --on-accent: #1a1200;
+    --mono: "Cascadia Code","Consolas","SFMono-Regular","Menlo",monospace;
+    --disp: "Bahnschrift","Segoe UI Semibold","Arial Narrow",sans-serif;
+    --body: -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  button, .opt, .card, .lampbtn, .linklike, .brandbox{touch-action:manipulation;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--body);}
+  body{min-height:100vh;}
+  .wrap{max-width:960px;margin:0 auto;padding:28px 20px 60px;}
+
+  /* Header strip like a loco data plate */
+  .plate{
+    display:flex;align-items:center;justify-content:space-between;
+    border:1px solid var(--border);border-radius:6px;
+    background:linear-gradient(180deg,var(--panel-2),var(--panel));
+    padding:14px 18px;margin-bottom:22px;
+  }
+  .plate .brand{font-family:var(--disp);letter-spacing:.06em;font-size:20px;text-transform:uppercase;}
+  .brandbox{cursor:pointer;}
+  .brandbox:hover .brand{color:var(--amber);}
+  .plate .brand span{color:var(--amber);}
+  .plate .sub{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:2px;}
+  .lamp-row{display:flex;gap:6px;}
+  .lamp{width:10px;height:10px;border-radius:50%;background:var(--amber-dim);box-shadow:inset 0 0 2px #000;}
+  .lamp.on{background:var(--amber);box-shadow:0 0 8px var(--amber);}
+
+  h1{font-family:var(--disp);font-weight:700;font-size:30px;letter-spacing:.02em;margin:8px 0 4px;text-transform:uppercase;}
+  .lead{color:var(--muted);font-size:14.5px;line-height:1.5;margin-bottom:26px;max-width:60ch;}
+
+  /* Set selection cards */
+  .sectionhead{font-family:var(--mono);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin:26px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+  .sectionhead:first-of-type{margin-top:0;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;}
+  .card{
+    border:1px solid var(--border);border-radius:8px;background:var(--panel);
+    padding:18px;cursor:pointer;transition:border-color .15s, transform .1s;
+    position:relative;overflow:hidden;
+  }
+  .card:hover{border-color:var(--amber);transform:translateY(-2px);}
+  .card .tag{font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+  .card .num{font-family:var(--disp);font-size:34px;margin:6px 0 2px;}
+  .card .qty{font-family:var(--mono);font-size:12.5px;color:var(--amber);}
+  .card .switchmark{position:absolute;top:14px;right:14px;width:20px;height:20px;border-radius:50%;border:2px solid var(--border);}
+
+  /* Quiz screen */
+  .quizhead{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px;}
+  .timer{
+    font-family:var(--mono);font-size:22px;padding:8px 14px;border-radius:6px;
+    border:1px solid var(--border);background:var(--panel);min-width:110px;text-align:center;
+  }
+  .timer.warn{color:var(--amber);border-color:var(--amber);}
+  .timer.crit{color:var(--red);border-color:var(--red);animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+
+  .progressbar{position:relative;height:8px;background:var(--panel-2);border-radius:4px;overflow:visible;margin-bottom:34px;border:1px solid var(--border);}
+  .progressbar > div{height:100%;background:var(--amber);border-radius:4px 0 0 4px;transition:width .25s;position:relative;}
+  .train-icon{position:absolute;right:-14px;top:50%;transform:translate(0,-50%);width:28px;height:28px;color:var(--amber);filter:drop-shadow(0 0 4px rgba(224,152,60,.5));}
+  .train-icon svg{width:100%;height:100%;display:block;}
+
+  .layout{display:grid;grid-template-columns:1fr 190px;gap:22px;align-items:start;}
+  @media (max-width:720px){.layout{grid-template-columns:1fr;}}
+
+  @media (max-width:480px){
+    .wrap{padding:16px 12px 40px;}
+    .plate{padding:12px 14px;}
+    .plate .brand{font-size:17px;}
+    h1{font-size:24px;}
+    .qcard{padding:16px;}
+    .qcard .qtext{font-size:16px;}
+    .opt{padding:12px;}
+    .navbtns{flex-wrap:wrap;gap:10px;}
+    .navbtns > div{width:100%;justify-content:space-between;}
+    button{padding:11px 14px;font-size:13.5px;flex:1;}
+    .timer{font-size:18px;min-width:90px;padding:7px 10px;}
+    .scoreband{padding:18px;gap:16px;}
+    .scoreband .big{font-size:38px;}
+  }
+
+  .qcard{border:1px solid var(--border);border-radius:8px;background:var(--panel);padding:24px;}
+  .qcard .qnum{font-family:var(--mono);color:var(--amber);font-size:13px;letter-spacing:.05em;margin-bottom:10px;}
+  .qcard .qtext{font-size:17px;line-height:1.55;margin-bottom:22px;}
+  .opt{
+    display:flex;align-items:flex-start;gap:12px;padding:13px 14px;margin-bottom:10px;
+    border:1px solid var(--border);border-radius:6px;cursor:pointer;background:var(--panel-2);
+    transition:border-color .12s, background .12s;
+  }
+  .opt:hover{border-color:var(--amber-dim);}
+  .opt.selected{border-color:var(--amber);background:var(--sel-bg);}
+  .opt .letter{
+    font-family:var(--mono);font-size:12px;width:22px;height:22px;border-radius:4px;
+    border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex:none;color:var(--muted);
+  }
+  .opt.selected .letter{border-color:var(--amber);color:var(--amber);}
+  .opt .otext{font-size:14.5px;line-height:1.45;padding-top:2px;}
+
+  .opt.correct{border-color:var(--green);background:var(--ok-bg);}
+  .opt.correct .letter{border-color:var(--green);color:var(--green);}
+  .opt.wrong{border-color:var(--red);background:var(--bad-bg);}
+  .opt.wrong .letter{border-color:var(--red);color:var(--red);}
+
+  .navbtns{display:flex;justify-content:space-between;margin-top:20px;gap:10px;}
+  button{font-family:var(--body);font-size:14px;border-radius:6px;border:1px solid var(--border);
+    background:var(--panel-2);color:var(--text);padding:10px 18px;cursor:pointer;transition:.12s;}
+  button:hover{border-color:var(--amber);}
+  button:disabled{opacity:.35;cursor:not-allowed;}
+  button.primary{background:var(--amber);color:var(--on-accent);border-color:var(--amber);font-weight:600;}
+  button.primary:hover{filter:brightness(1.08);}
+  button.ghost{background:transparent;}
+
+  /* lamp navigator panel */
+  .panelbox{border:1px solid var(--border);border-radius:8px;background:var(--panel);padding:14px;}
+  .panelbox .ptitle{font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+  .lampgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:6px;}
+  .lampbtn{
+    width:100%;aspect-ratio:1;border-radius:4px;border:1px solid var(--border);
+    background:var(--panel-2);color:var(--muted);font-family:var(--mono);font-size:11px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  .lampbtn.answered{background:var(--green-dim);color:var(--text);border-color:var(--green);}
+  .lampbtn.current{outline:2px solid var(--amber);outline-offset:1px;}
+
+  .legend{margin-top:12px;font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:5px;font-family:var(--mono);}
+  .legend .row{display:flex;align-items:center;gap:6px;}
+  .dot{width:8px;height:8px;border-radius:2px;}
+  .dot.off{background:var(--panel-2);border:1px solid var(--border);}
+  .dot.onn{background:var(--green);}
+
+  /* results */
+  .scoreband{
+    border:1px solid var(--border);border-radius:8px;padding:26px;background:var(--panel);
+    display:flex;align-items:center;gap:26px;margin-bottom:22px;flex-wrap:wrap;
+  }
+  .scoreband .big{font-family:var(--disp);font-size:52px;line-height:1;}
+  .scoreband .big.pass{color:var(--green);}
+  .scoreband .big.fail{color:var(--red);}
+  .scoreband .meta{font-family:var(--mono);font-size:13px;color:var(--muted);line-height:1.8;}
+  .reviewq{border:1px solid var(--border);border-radius:8px;background:var(--panel);padding:18px 20px;margin-bottom:12px;}
+  .reviewq .qtext{font-size:15px;margin-bottom:12px;line-height:1.5;}
+  .reviewq .qnum{font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:6px;}
+  .badge{display:inline-block;font-family:var(--mono);font-size:10.5px;padding:2px 7px;border-radius:3px;margin-left:8px;text-transform:uppercase;letter-spacing:.05em;}
+  .badge.correct{background:var(--green-dim);color:var(--green);}
+  .badge.wrong{background:var(--red-dim);color:var(--red);}
+  .badge.skip{background:var(--panel-2);color:var(--muted);border:1px solid var(--border);}
+
+  .hidden{display:none !important;}
+  .toprow{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  a.linklike{color:var(--muted);font-family:var(--mono);font-size:12px;cursor:pointer;text-decoration:underline;}
+  .loginbox{max-width:420px;margin:10px auto 0;border:1px solid var(--border);border-radius:8px;background:var(--panel);padding:22px;}
+  .flabel{display:block;font-family:var(--mono);font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 6px;}
+  .finput{width:100%;font-size:16px;padding:12px;border-radius:6px;border:1px solid var(--border);background:var(--panel-2);color:var(--text);font-family:var(--body);}
+  .finput:focus{outline:none;border-color:var(--amber);}
+  .ferr{color:var(--red);font-size:13px;margin-top:10px;}
+  .fnote{color:var(--muted);font-size:12px;line-height:1.5;margin-top:14px;}
+  .userline{font-family:var(--mono);font-size:13px;color:var(--muted);margin-bottom:14px;}
+  .userline b{display:block;font-family:var(--disp);font-size:26px;letter-spacing:.03em;color:var(--amber);font-weight:700;margin:2px 0 4px;}
+  .listbox{border:1px solid var(--border);border-radius:8px;background:var(--panel);overflow:hidden;}
+  .lrow{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .lrow:last-child{border-bottom:none;}
+  .lrow.me{background:var(--sel-bg);border-left:3px solid var(--amber);}
+  .lrank{font-family:var(--mono);color:var(--amber);min-width:26px;font-size:14px;}
+  .lmain{flex:1;min-width:120px;font-size:14.5px;}
+  .lsub{font-family:var(--mono);font-size:12.5px;color:var(--muted);}
+  .lsub b{color:var(--text);}
+  .lempty{padding:16px;color:var(--muted);font-size:13.5px;}
+  .lgap{padding:4px 14px;color:var(--muted);font-family:var(--mono);}
+  .boardhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+  .boardctl{display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;}
+  .bsel{font-size:13px;padding:7px 8px;border-radius:6px;border:1px solid var(--border);background:var(--panel-2);color:var(--text);max-width:150px;}
+  .bbtn{padding:7px 12px;font-size:13px;flex:none;}
+  [data-theme="light"]{
+    --bg:#f2f5fa; --panel:#ffffff; --panel-2:#eef2f8; --border:#d3dbe8;
+    --text:#14202e; --muted:#5d6b7d;
+    --amber:#1f5fbf; --amber-dim:#b9cdf0;
+    --green:#2e8b57; --green-dim:#d9f0e3;
+    --red:#c8423d; --red-dim:#f8dcda;
+    --sel-bg:#e3edfc; --ok-bg:#e2f5ea; --bad-bg:#fbe4e2; --on-accent:#ffffff;
+  }
+  [data-theme="light"] .lamp{box-shadow:none;}
+  .hdrright{display:flex;align-items:center;gap:12px;}
+  .themebtn{padding:6px 10px;font-size:12px;flex:none;}
+  .vbadge{font-family:var(--mono);font-size:11px;padding:3px 9px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em;border:1px solid;}
+  .vbadge.strong{color:var(--green);border-color:var(--green);background:var(--ok-bg);}
+  .vbadge.average{color:var(--amber);border-color:var(--amber);background:var(--sel-bg);}
+  .vbadge.weak{color:var(--red);border-color:var(--red);background:var(--bad-bg);}
+  .tabs{display:flex;gap:8px;margin-bottom:18px;}
+  .tab{flex:1;padding:13px 10px;font-size:15px;border-radius:8px;}
+  .tab.on{background:var(--amber);color:var(--on-accent);border-color:var(--amber);font-weight:600;}
+  #fibBox{margin-top:4px;}
+  #fibBox .finput{font-size:17px;padding:14px;}
+  .wm{position:fixed;right:18px;bottom:14px;font-family:var(--disp);font-weight:700;font-size:22px;letter-spacing:.15em;color:var(--muted);opacity:.42;user-select:none;pointer-events:none;z-index:1;}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.68);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50;}
+  .modal-box{max-width:400px;width:100%;border:1px solid var(--border);border-radius:8px;background:var(--panel);padding:22px;box-shadow:0 12px 32px rgba(0,0,0,.45);}
+  .modal-title{font-family:var(--disp);font-size:22px;text-transform:uppercase;letter-spacing:.03em;margin:0 0 8px;}
+  .modal-msg{font-size:14.5px;color:var(--muted);line-height:1.5;margin-bottom:18px;}
+  .modal-btns{display:flex;gap:10px;justify-content:flex-end;}
+</style>
+  <!-- CONFIRM SUBMIT MODAL -->
+  <div id="confirmModal" class="modal-bg hidden">
+    <div class="modal-box">
+      <div class="modal-title">Submit Test?</div>
+      <div class="modal-msg" id="confirmMsg">Are you sure you want to submit?</div>
+      <div class="modal-btns">
+        <button id="confirmNo" class="ghost">No</button>
+        <button id="confirmYes" class="primary">Yes</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+document.documentElement.setAttribute('data-theme', 'dark');
+</script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="plate">
+    <div id="brandHome" class="brandbox">
+      <div class="brand">ETTC <span>BZA</span></div>
+      <div class="sub">MCQs</div>
+    </div>
+    <div class="hdrright"><div class="lamp-row" id="headerLamps"></div></div>
+  </div>
+
+  <!-- SCREEN: LOGIN -->
+  <div id="screenLogin" class="hidden">
+    <div class="loginbox">
+      <div class="sectionhead" style="margin-top:0;">Login</div>
+      <label class="flabel" for="inName">HRMS ID</label>
+      <input id="inName" class="finput" type="text" autocomplete="off" autocapitalize="characters" maxlength="30" placeholder="Enter your HRMS ID">
+      <div id="loginErr" class="ferr hidden">Invalid HRMS ID. Please check and try again.</div>
+      <button id="loginBtn" class="primary" style="width:100%;margin-top:14px;">Continue</button>
+      <div class="fnote">Log in with the HRMS ID given to you.</div>
+    </div>
+  </div>
+
+  <!-- SCREEN: SELECT -->
+  <div id="screenSelect" class="hidden">
+    <div class="userline">Signed in as <b id="userLine"></b><a class="linklike" id="changeUser">Not you?</a></div>
+    <div class="tabs">
+      <button id="tabMcq" class="tab on">MCQs</button>
+      <button id="tabFib" class="tab">Fill in the Blanks</button>
+    </div>
+
+    <div id="panelMcq">
+      <div class="lead">Pick a set to begin.</div>
+      <div class="sectionhead">Random Sets</div>
+      <div class="grid" id="setGridRandom"></div>
+
+      <div class="sectionhead">AIM Sets</div>
+      <div class="grid" id="setGridAim"></div>
+    </div>
+
+    <div id="panelFib" class="hidden">
+      <div class="lead">Type the answer for each blank. Pick a set to begin.</div>
+      <div class="sectionhead">Fill in the Blanks Sets</div>
+      <div class="grid" id="setGridFib"></div>
+    </div>
+
+    <div id="boardWrap" class="hidden">
+      <div class="sectionhead">My scores</div>
+      <div id="myScores" class="listbox"><div class="lempty">Loading&hellip;</div></div>
+
+      <div class="sectionhead boardhead">
+        <span>Leaderboard</span>
+        <span class="boardctl"><select id="boardSet" class="bsel"></select><button id="boardRefresh" class="ghost bbtn">Refresh</button></span>
+      </div>
+      <div id="boardList" class="listbox"><div class="lempty">Loading&hellip;</div></div>
+    </div>
+  </div>
+
+  <!-- SCREEN: QUIZ -->
+  <div id="screenQuiz" class="hidden">
+    <div class="toprow">
+      <a class="linklike" id="backLink">&larr; End &amp; back to main</a>
+    </div>
+    <div class="quizhead">
+      <div>
+        <h1 id="quizTitle" style="margin-bottom:2px;">Set 1</h1>
+        <div class="lead" style="margin-bottom:0;">Question <span id="qPos">1</span> of <span id="qTotal">40</span></div>
+      </div>
+      <div class="timer" id="timer">40:00</div>
+    </div>
+    <div class="progressbar"><div id="progressFill" style="width:0%">
+      <div class="train-icon">
+        <svg viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="10" width="30" height="14" rx="3" fill="currentColor"/>
+          <rect x="30" y="4" width="10" height="10" rx="2" fill="currentColor"/>
+          <rect x="10" y="4" width="8" height="7" rx="1.5" fill="currentColor"/>
+          <circle cx="12" cy="26" r="4" fill="currentColor"/>
+          <circle cx="26" cy="26" r="4" fill="currentColor"/>
+          <rect x="2" y="16" width="4" height="4" fill="currentColor"/>
+        </svg>
+      </div>
+    </div></div>
+
+    <div class="layout">
+      <div class="qcard">
+        <div class="qnum" id="qLabel">QUESTION 01</div>
+        <div class="qtext" id="qText"></div>
+        <div id="optsBox"></div>
+        <div id="fibBox" class="hidden"><input id="fibInput" class="finput" type="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="120" placeholder="Type your answer"></div>
+        <div class="navbtns">
+          <button id="prevBtn" class="ghost">&larr; Previous</button>
+          <div style="display:flex;gap:10px;">
+            <button id="clearBtn" class="ghost">Clear</button>
+            <button id="nextBtn">Next &rarr;</button>
+            <button id="submitBtn" class="primary hidden">Submit test</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panelbox">
+        <div class="ptitle">Indication Panel</div>
+        <div class="lampgrid" id="lampGrid"></div>
+        <div class="legend">
+          <div class="row"><span class="dot onn"></span> Answered: <span id="countAnswered">0/40</span></div>
+          <div class="row"><span class="dot off"></span> Not answered: <span id="countUnanswered">40/40</span></div>
+        </div>
+        <div style="margin-top:16px;">
+          <button class="primary" style="width:100%;" id="submitBtnSide">Submit test</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN: RESULTS -->
+  <div id="screenResults" class="hidden">
+    <h1>Result</h1>
+    <div class="scoreband">
+      <div>
+        <div class="big" id="scoreBig">0/40</div>
+      </div>
+      <div class="meta" id="scoreMeta"></div>
+    </div>
+
+    <div id="aimWrap">
+      <div class="sectionhead" style="margin-top:0;">AIM-wise performance</div>
+      <div id="aimSummary" class="listbox"></div>
+      <div style="height:22px;"></div>
+    </div>
+
+    <div id="resBoardWrap" class="hidden">
+      <div class="sectionhead boardhead" style="margin-top:0;">
+        <span>Leaderboard</span>
+        <span class="boardctl"><select id="resBoardSet" class="bsel"></select><button id="resBoardRefresh" class="ghost bbtn">Refresh</button></span>
+      </div>
+      <div id="resBoardList" class="listbox"><div class="lempty">Loading&hellip;</div></div>
+    </div>
+
+    <div class="toprow" style="margin-top:26px;">
+      <div class="lead" style="margin-bottom:0;">Review — correct answers highlighted in green.</div>
+      <a class="linklike" id="restartLink">&larr; Back to main list</a>
+    </div>
+    <div style="margin:10px 0 14px;"><select id="reviewFilter" class="bsel" style="max-width:none;"></select></div>
+    <div id="reviewList"></div>
+  </div>
+
+</div>
+
+<script>
+const ALL_SETS = {"random": [{"label": "Random Set 01", "type": "random", "questions": [{"q": "256. In a WAG-9 locomotive, during proportional braking, maximum BC pressure is", "options": {"A": "1.8 Kg/cm2", "B": "2.5 Kg/cm2", "C": "3.8 Kg/cm2", "D": "2.0 Kg/cm2"}, "answer": "B"}, {"q": "262. If the MPH is isolated, observe a starting current of ______ for the first 5 minutes and a continuous current of ______ for the traction motors (TMs).", "options": {"A": "750, 750", "B": "750, 500", "C": "920, 500", "D": "920, 750"}, "answer": "C"}, {"q": "105. In a WAG-12B locomotive, if PB is applied along with SA9 maximum, PB gauge shows ______ kg/cm2 .", "options": {"A": "1.8", "B": "2", "C": "2.5", "D": "3.8"}, "answer": "D"}, {"q": "234. In a WAG-9 locomotive, parking brakes are provided to ________ wheels.", "options": {"A": "1,6,7&12", "B": "2,6,7&11", "C": "1,4,5 & 8", "D": "2,6, 8 &12"}, "answer": "B"}, {"q": "6. The ______ brake is known as the Independent Brake Valve, which is used for the application and release of locomotive brakes.", "options": {"A": "A9", "B": "SA9", "C": "RS", "D": "None"}, "answer": "B"}, {"q": "226. During EEC operation, the MP shall be kept in the ________ position to close the ________ contactors.", "options": {"A": "N, Line", "B": "N, Cam", "C": "0, Line", "D": "N, EM"}, "answer": "A"}, {"q": "250. In a 3-phase locomotive, MCP is getting supply from ________.", "options": {"A": "AC 2", "B": "AC 3", "C": "AC 1", "D": "None"}, "answer": "B"}, {"q": "200. In a 3-Phase EMU, driving coach is called as ______.", "options": {"A": "Trailer Coach", "B": "Motor coach", "C": "DMC", "D": "DTC"}, "answer": "D"}, {"q": "10. Location of A-8 COC in WAG 5 (non modified cabs) locomotive is ______.", "options": {"A": "MC-1", "B": "Cab-1 below A9", "C": "Cab-2", "D": "MC-2"}, "answer": "B"}, {"q": "237. In a 3-phase locomotive, battery charger is getting supply from ________.", "options": {"A": "AC 2", "B": "AC 3", "C": "AC 1", "D": "None"}, "answer": "B"}, {"q": "212. ______ device is provided on both side of OHE to maintain tension in OHE.", "options": {"A": "ATD", "B": "APD", "C": "Mast", "D": "SI"}, "answer": "A"}, {"q": "52. In a WAG-12B locomotive, the VCD.ACK/RESET push button is located at ______.", "options": {"A": "TLB", "B": "Below DDU", "C": "Central Panel", "D": "CCR"}, "answer": "C"}, {"q": "268. In a 3-phase locomotive, location of FDU is ________.", "options": {"A": "SB 1", "B": "SB 2", "C": "HB 1", "D": "HB 2"}, "answer": "B"}, {"q": "239. In a conventional locomotive, for charging of BP pressure ________ coc to be kept open.", "options": {"A": "A8", "B": "RBEB", "C": "RGCP", "D": "RGAF"}, "answer": "A"}, {"q": "185. While issuing End to End type of BPC ______% of brake power is required.", "options": {"A": "80", "B": "85", "C": "90", "D": "95"}, "answer": "C"}, {"q": "191. When FIBA acts in any coach due to air spring puncture, ______ pressure will drop.", "options": {"A": "FP", "B": "BP", "C": "MR", "D": "All"}, "answer": "B"}, {"q": "227. During GR manual operation, the maximum permissible speed shall be restricted to ______ KMPH.", "options": {"A": "20", "B": "30", "C": "15", "D": "40"}, "answer": "B"}, {"q": "265. If SR-1 pump not working, work the train with ________.", "options": {"A": "Trip 63.1/1 MCB", "B": "Isolate Bogie-1", "C": "50% sectional load", "D": "ALL"}, "answer": "D"}, {"q": "201. In a 3-phase EMU/MEMU/T-18, to negotiate neutral section the ______ switch is provided.", "options": {"A": "Cruise control", "B": "VCD Ack.", "C": "PSS", "D": "ENS PB"}, "answer": "D"}, {"q": "252. In a 3-phase locomotive, on moving BL key from ‘D’ to ‘OFF’ position, ________ brakes will apply automatically.", "options": {"A": "Auto", "B": "Loco", "C": "Both", "D": "PB"}, "answer": "D"}, {"q": "203. In a Vande Bharat trainset, ______% of the coaches are equipped with traction motors.", "options": {"A": "50", "B": "60", "C": "75", "D": "100"}, "answer": "A"}, {"q": "123. In a 3-phase locomotive, raise the pantograph after ensuring ______ node number.", "options": {"A": "FLG 504", "B": "FLG 550", "C": "FLG 570", "D": "FLG 590"}, "answer": "A"}, {"q": "243. In a conventional coaching fit locomotive, during loco brake power test, locomotive should not move up to ________ KN.", "options": {"A": "800 Amp", "B": "400 Amp", "C": "500 amp", "D": "600 Amp"}, "answer": "A"}, {"q": "74. In a conventional locomotive, J2 controls the direction of current to motor fields of ______ TMs.", "options": {"A": "4", "B": "5", "C": "4,5,6", "D": "6"}, "answer": "C"}, {"q": "67. In a WAG-5 locomotive, ______ type of bogie is provided.", "options": {"A": "CO-CO Trimount", "B": "CO-CO Tetra high adhesion", "C": "CO-CO flexi coil bogie", "D": "CO-CO Special design"}, "answer": "A"}, {"q": "30. To use sanders, the ______ pedal switch to be operated.", "options": {"A": "PVEF", "B": "PSA", "C": "PVCD", "D": "None"}, "answer": "B"}, {"q": "124. In a 3-phase locomotive, close VCB after ensuring ______ node number.", "options": {"A": "FLG 504", "B": "FLG 550", "C": "FLG 570", "D": "FLG 590"}, "answer": "B"}, {"q": "66. In a WAP-4 locomotives, ______ number of brake cylinders are provided.", "options": {"A": "4", "B": "6", "C": "8", "D": "12"}, "answer": "D"}, {"q": "219. During dense fog, the maximum permissible speed of a train in an Automatic Block Signalling (ABS) section while passing a signal displaying a single yellow aspect is restricted to ______ KMPH.", "options": {"A": "Restricted speed to stop at next stop signal", "B": "75 Kmph", "C": "70 Kmph", "D": "80 Kmph"}, "answer": "A"}, {"q": "80. In a conventional locomotive, QD-1 is connected between ______ & ______ TMs.", "options": {"A": "2 & 3", "B": "1 & 3", "C": "2 & 4", "D": "4 & 5"}, "answer": "A"}, {"q": "147. In a conventional locomotive, to reset the VCD penalty, wait for ______ seconds after keeping MP on Zero.", "options": {"A": "32", "B": "160", "C": "45", "D": "55"}, "answer": "A"}, {"q": "4. The maximum total duty hours permitted for running staff in a fortnight are ______", "options": {"A": "96", "B": "104", "C": "100", "D": "98"}, "answer": "B"}, {"q": "133. In a 3-phase locomotive, the train speed during PTDC mode shall not exceed______ KMPH.", "options": {"A": "10", "B": "25", "C": "20", "D": "30"}, "answer": "A"}, {"q": "182. In BMBS provided wagons, during loaded condition, APM sends maximum pressure in BC is ______ kg/cm2.", "options": {"A": "2.5", "B": "3", "C": "3.5", "D": "3.8"}, "answer": "D"}, {"q": "242. In a conventional freight fit locomotive, during loco brake power test, locomotive should not move up to ________ KN.", "options": {"A": "800 Amp", "B": "400 Amp", "C": "500 amp", "D": "600 Amp"}, "answer": "D"}, {"q": "266. If OCB-2 not working, work the train with ________.", "options": {"A": "Trip 59.1/2 MCB", "B": "Isolate Bogie-2", "C": "50% sectional load", "D": "ALL"}, "answer": "D"}, {"q": "246. In a 3-phase locomotive, Oil Cooling Blower is getting supply from ________.", "options": {"A": "AC 2", "B": "AC 3", "C": "AC 1", "D": "None"}, "answer": "C"}, {"q": "245. In a WAG-12B locomotive, during loco brake power test, locomotive should not move up to ________ KN.", "options": {"A": "100", "B": "120", "C": "157", "D": "140"}, "answer": "C"}, {"q": "122. In a 3-phase locomotive, min. voltage required to energise is ______.", "options": {"A": "90 Volts", "B": "Above 90 volts", "C": "Below 90 volts", "D": "Above 92 volts"}, "answer": "D"}, {"q": "222. Whistle code for Train Parting is ________.", "options": {"A": "___ 0 0", "B": "___ ___ 0", "C": "___ 0 ___ 0", "D": "___ ___ 0 0"}, "answer": "C"}]}, {"label": "Random Set 02", "type": "random", "questions": [{"q": "5. According to the Running Staff Rest Rules, the minimum rest period at headquarters after performing less than 5 hours of duty is ______ hours.", "options": {"A": "5+1", "B": "12", "C": "16", "D": "16+2"}, "answer": "C"}, {"q": "79. In a conventional locomotive , over current protection relay for TPC-2 is ______.", "options": {"A": "QLA", "B": "QOA", "C": "QRSI 2", "D": "QOP 2"}, "answer": "C"}, {"q": "258. In a WAG-12 locomotive, during proportional braking, maximum BC pressure is", "options": {"A": "1.8 Kg/cm2", "B": "2.5 Kg/cm2", "C": "3.8 Kg/cm2", "D": "2.0 Kg/cm2"}, "answer": "C"}, {"q": "197. In a conventional EMU and MEMU, driving coach is called as ______.", "options": {"A": "Trailer Coach", "B": "Motor coach", "C": "DMC", "D": "DTC"}, "answer": "B"}, {"q": "62. In a WAG-7 locomotive, location of MVSL-1 is ______.", "options": {"A": "HT1", "B": "MC 1", "C": "MC 2", "D": "HT 2"}, "answer": "A"}, {"q": "86. To perform shunting with a 3-phase locomotive, keep the ______ switch in the ______ position.", "options": {"A": "160, 0", "B": "152,0", "C": "160, 1", "D": "154,1"}, "answer": "A"}, {"q": "135. In a 3-phase locomotive, Traction Bogie isolation switch is ______.", "options": {"A": "152", "B": "160", "C": "237.1", "D": "154"}, "answer": "D"}, {"q": "202. The maximum designed speed of the Vande Bharat train is ______ KMPH.", "options": {"A": "110", "B": "120", "C": "130", "D": "160"}, "answer": "D"}, {"q": "153. In a WAG-12B locomotive, while conducting loco brake power test, locomotive shall not move up to ______ KN.", "options": {"A": "125", "B": "135", "C": "150", "D": "157"}, "answer": "D"}, {"q": "43. In a 3-phase locomotive, 'U' meter shows ______ voltage.", "options": {"A": "TM", "B": "OHE", "C": "OHE & AUX.", "D": "Aux.Power Ckt"}, "answer": "B"}, {"q": "90. During locomotive brake testing of WAG-9 or WAP-7, locomotive should not move up to ______.", "options": {"A": "100 KN", "B": "125 Kn", "C": "150 KN", "D": "180 Kn"}, "answer": "C"}, {"q": "220. When a Fog Pass Device is provided in the locomotive, in Automatic Block Signalling (ABS) territory, after passing an Automatic Stop Signal displaying a Green aspect, the speed of the train shall not exceed ______ KMPH.", "options": {"A": "65 Kmph", "B": "75 Kmph", "C": "70 Kmph", "D": "80 Kmph"}, "answer": "B"}, {"q": "46. In a 3-phase locomotive, the PTDC handle is provided in ______ brake system.", "options": {"A": "IRAB", "B": "E 70", "C": "CCB 2.0", "D": "None"}, "answer": "C"}, {"q": "136. In a conventional locomotive, a minimum voltage of ______ is required for energization.", "options": {"A": "90 Volts", "B": "Above 90 volts", "C": "Below 90 volts", "D": "Above 92 volts"}, "answer": "B"}, {"q": "261. In a 3-phase locomotive, battery charger input MCB is ________ and is located in ________.", "options": {"A": "100, HB1", "B": "110, SB1", "C": "100, HB2/BUr2", "D": "110, HB2"}, "answer": "C"}, {"q": "186. While issuing PREMIUM type of BPC ______% of brake power is required.", "options": {"A": "80", "B": "85", "C": "90", "D": "95"}, "answer": "D"}, {"q": "49. In a WAG-12B locomotive, the TBC bypass switch is provided in ______ panel.", "options": {"A": "TLB", "B": "Below DDU", "C": "Central Panel", "D": "CCR"}, "answer": "D"}, {"q": "113. In a WAG-12B locomotive, to operate HOM, ______ key to be used.", "options": {"A": "PATRA", "B": "Blue KABA", "C": "IG-38", "D": "ZPT"}, "answer": "B"}, {"q": "96. In a 3-phase locomotive, to switch on flasher light, the ______ switch is to be operated.", "options": {"A": "ZTEL", "B": "CCFL", "C": "BPFL", "D": "BPPB"}, "answer": "C"}, {"q": "28. When BPT is pressed, the ______ lamp (s) glows on LP's desk.", "options": {"A": "LSOl, LSDJ", "B": "LSDJ, LSP", "C": "LSRSI, LSP", "D": "LSB,LSP"}, "answer": "C"}, {"q": "189. While working LHB coaching trains, ACP can be reset with ______ key.", "options": {"A": "Reverser", "B": "BL", "C": "MASCON", "D": "Universal"}, "answer": "D"}, {"q": "107. In a WAG-12B locomotive, de-humidifier works with ______ supply.", "options": {"A": "110 V, DC", "B": "110 V, AC", "C": "220 V, DC", "D": "230 V, AC"}, "answer": "A"}, {"q": "204. In Vande Bharat trainset, ______ coaches are having parking brakes.", "options": {"A": "DTC", "B": "MC", "C": "TC", "D": "All"}, "answer": "D"}, {"q": "101. In a 3-phase locomotive, the battery charger input MCB No. is ______ and located in ______.", "options": {"A": "110, SB1", "B": "100, HB2/BUR 2", "C": "110, SB2", "D": "100 SB 2"}, "answer": "B"}, {"q": "22. For regressing of the notches, the ______ push button is provided on the LP's desk.", "options": {"A": "BPR", "B": "BPT", "C": "BPP", "D": "BPSW"}, "answer": "A"}, {"q": "61. In a WAG-7 locomotive, location of SIV is ______.", "options": {"A": "HT1", "B": "Motor Chest 1", "C": "Motor Chest 2", "D": "HT 2"}, "answer": "C"}, {"q": "85. A three-phase locomotive has ______ no. of traction converters and ______ no. of auxiliary converters.", "options": {"A": "3, 3", "B": "2,1", "C": "2, 3", "D": "2,2"}, "answer": "C"}, {"q": "139. In a conventional locomotive, when ZPT handle operated to '2' position, ______ pantograph will raise.", "options": {"A": "BOTH", "B": "REAR", "C": "NONE", "D": "FRONT"}, "answer": "D"}, {"q": "177. In locomotive BP pipe pressure is _____________kg/cm2 and FP pipe pressure is ________ kg/cm2.", "options": {"A": "5,6", "B": "5,5", "C": "6,5", "D": "6,6"}, "answer": "A"}, {"q": "215. The maximum permissible wheel tread flat on a locomotive wheel is ______ mm.", "options": {"A": "30 mm", "B": "40 mm", "C": "60 mm", "D": "50 mm"}, "answer": "D"}, {"q": "192. When any Air Spring is damaged or isolated in LHB coaches, ______ kmph speed to be followed.", "options": {"A": "55", "B": "60", "C": "65", "D": "70"}, "answer": "B"}, {"q": "11. Location of A-8 COC in WAP-4 loco without pneumatic panel is ______.", "options": {"A": "Pn.Panel", "B": "Cab-1", "C": "Cab-2 below A9", "D": "MC-2"}, "answer": "C"}, {"q": "73. In a conventional locomotive, J1 controls the direction of current to motor fields of ______ TMs.", "options": {"A": "1", "B": "2", "C": "1,2,3", "D": "3"}, "answer": "C"}, {"q": "240. In a 3-phase locomotive, battery charger output MCB is ________ and is located at ________.", "options": {"A": "100, SB 2", "B": "110 SB2", "C": "110 SB 1", "D": "100 SB2"}, "answer": "B"}, {"q": "8. In a WAG-7 locomotive, the horns are supplied with pneumatic pressure from the", "options": {"A": "MR1", "B": "MR2", "C": "MR3", "D": "MR4"}, "answer": "D"}, {"q": "31. In a conventional locomotive, to close VCB ______ & ______ switches are to be closed.", "options": {"A": "BLDJ", "B": "BLRDJ", "C": "BLVMT,", "D": "BLDJ, BLRDJ"}, "answer": "D"}, {"q": "134. In a 3-phase locomotive, VCD isolation switch is ______.", "options": {"A": "152", "B": "160", "C": "237.1", "D": "154"}, "answer": "C"}, {"q": "47. In a 3-phase locomotive, the 'UBA' voltmeter shows BA Voltage in ______ mode(s).", "options": {"A": "Self hold", "B": "Drive", "C": "Cooling", "D": "Drive & Cooling"}, "answer": "D"}, {"q": "132. In a 3-phase locomotive, CCB2.0 brake system, position of MODE switch in leading cab is ______.", "options": {"A": "TRAIL", "B": "LEAD", "C": "HLPR", "D": "TEST"}, "answer": "B"}, {"q": "3. The Chalak-Dal mobile application is the official app developed by ______ for running staff of Indian Railways.", "options": {"A": "COIS", "B": "CRIS", "C": "CMS", "D": "FOIS"}, "answer": "B"}]}, {"label": "Random Set 03", "type": "random", "questions": [{"q": "174. In a bogie-mounted brake cylinder coach, ______ no. of brake cylinders are provided.", "options": {"A": "1", "B": "2", "C": "3", "D": "4"}, "answer": "D"}, {"q": "173. In a bogie-mounted brake system wagon, ______ no. of brake cylinders are provided.", "options": {"A": "1", "B": "2", "C": "3", "D": "4"}, "answer": "B"}, {"q": "77. In a conventional locomotive, earth fault protection relay for TPC-2 is ______.", "options": {"A": "QLA", "B": "QOA", "C": "QRSI", "D": "QOP 2"}, "answer": "D"}, {"q": "104. In a WAG-12B locomotive, Max. Braking Effort with 22.5T axle load is ______ KN.", "options": {"A": "514", "B": "706", "C": "780", "D": "520"}, "answer": "A"}, {"q": "157. During Long Haul operation, if a conventional locomotive is attached in the middle, the MU2B valve shall be kept in the ______ position.", "options": {"A": "TEST", "B": "LEAD", "C": "TRAIL", "D": "HLPR"}, "answer": "B"}, {"q": "199. In a 3- Phase MEMU, driving coach is called as ______.", "options": {"A": "Trailer Coach", "B": "Motor coach", "C": "DMC", "D": "DTC"}, "answer": "C"}, {"q": "106. In a WAG-12B locomotive, panto selector switch positions are ______.", "options": {"A": "Rear", "B": "Front", "C": "Both", "D": "All the above"}, "answer": "D"}, {"q": "257. In a WAG-9 dead locomotive with CCB2.0, during proportional braking, maximum BC pressure is ________.", "options": {"A": "1.8 Kg/cm2", "B": "2.5 Kg/cm2", "C": "3.8 Kg/cm2", "D": "2.0 Kg/cm2"}, "answer": "C"}, {"q": "20. PVEF is ______ type of switch", "options": {"A": "Pedal", "B": "Rotating", "C": "BL", "D": "Toggle"}, "answer": "A"}, {"q": "194. In conventional locos, during BP continuity test, ______ coc to be closed before dropping of BP pressure by TMR.", "options": {"A": "A8", "B": "A12", "C": "RGEB", "D": "RGCP"}, "answer": "A"}, {"q": "78. In a conventional locomotive, over current protection relay for TPC-1 is ______.", "options": {"A": "QLA", "B": "QOA", "C": "QRSI 1", "D": "QOP 2"}, "answer": "C"}, {"q": "116. In a WAG-12B locomotive, ______ no. of lamps are provided in indication panel.", "options": {"A": "10", "B": "9", "C": "8", "D": "7"}, "answer": "D"}, {"q": "82. In a WAG-7 locomotive, location of HQOP-1 is ______.", "options": {"A": "HT3, BA2", "B": "HT1, BA1", "C": "HT3, BA3", "D": "MC-1"}, "answer": "B"}, {"q": "39. In a 3-phase locomotive, the location of Emergency Stop Push Button switch is ______.", "options": {"A": "Panel D", "B": "Panel A", "C": "Panel B", "D": "Panel C"}, "answer": "B"}, {"q": "178. To release the brakes manually on a wagon, the ______ connected to the Distributor Valve (DV) shall be pulled.", "options": {"A": "Service handle", "B": "AR", "C": "QRV", "D": "COC"}, "answer": "C"}, {"q": "14. Location of HOBA in WAG7 locomotive ______.", "options": {"A": "Switch Panel", "B": "Cab-1", "C": "MC-1", "D": "Relay panel"}, "answer": "A"}, {"q": "100. In a WAG-9 locomotive, in proportional working, maximum brake cylinder pressure is ______ kg/cm2.", "options": {"A": "1.8", "B": "2", "C": "2.5", "D": "3.8"}, "answer": "C"}, {"q": "23. For testing of signalling lamps ______ push button is provided on LP's desk.", "options": {"A": "BPR", "B": "BPT", "C": "BPP", "D": "BPSW"}, "answer": "B"}, {"q": "129. In a 3-phase MU locomotive, position of 136 COC in trailing locomotive is ______.", "options": {"A": "TRAIL", "B": "OPEN", "C": "LEAD", "D": "CLOSE"}, "answer": "D"}, {"q": "65. In a WAG-5/WAG-7 locomotive, ______ number of brake cylinders are provided.", "options": {"A": "4", "B": "6", "C": "8", "D": "12"}, "answer": "C"}, {"q": "34. In a conventional locomotive, to switch on the front head light, the ______ switch to be kept at ON.", "options": {"A": "BLZLF", "B": "BLLM", "C": "BLPRF", "D": "BLPRR"}, "answer": "C"}, {"q": "168. In a single-pipe air brake system provided on wagons/coaches, the auxiliary reservoir is charged with ______ pressure.", "options": {"A": "BP", "B": "FP", "C": "MR", "D": "BP or FP"}, "answer": "A"}, {"q": "249. In a 3-phase locomotive, TFP oil circulating pump is getting supply from ________.", "options": {"A": "AC 2", "B": "AC 3", "C": "AC 1", "D": "None"}, "answer": "A"}, {"q": "1. Crew cannot sign ON in the CMS more than ______ minutes before or after their scheduled sign-on time.", "options": {"A": "20", "B": "30", "C": "45", "D": "60"}, "answer": "B"}, {"q": "169. In a twin-pipe air brake system provided on wagons/coaches, the auxiliary reservoir is charged with ______ pressure.", "options": {"A": "BP", "B": "FP", "C": "MR", "D": "BP or FP"}, "answer": "B"}, {"q": "228. During GR manual operation, ensure that the ________ relay is not in the wedged condition.", "options": {"A": "Q45", "B": "Q46", "C": "Q44", "D": "Q48"}, "answer": "C"}, {"q": "229. During GR manual operation for progression or regression, the GR shall be rotated manually within ______ seconds.", "options": {"A": "1", "B": "1.5", "C": "0.8", "D": "0.5"}, "answer": "D"}, {"q": "38. In a conventional locomotive, when HMCS-1 is kept on 3rd position, the ______ line contactor will not close.", "options": {"A": "L1", "B": "L2", "C": "L3", "D": "L4"}, "answer": "B"}, {"q": "152. WAG-12B locomotive can be shut down by operating SBAC or by using ______.", "options": {"A": "MASCON", "B": "KABA", "C": "PATRA", "D": "DDU"}, "answer": "D"}, {"q": "176. The colour of the BP pipe is ______, and the colour of the FP pipe is ______.", "options": {"A": "Green, Yellow", "B": "Green, White", "C": "Green,Red", "D": "Green, Green"}, "answer": "B"}, {"q": "83. Maximum speed of a WAG-9 locomotive is ______ KMPH.", "options": {"A": "90", "B": "95", "C": "100", "D": "105"}, "answer": "C"}, {"q": "254. In a WAG-12B locomotive, normal position of pantograph selector switch is ________.", "options": {"A": "Auto", "B": "Rear", "C": "front", "D": "Both"}, "answer": "B"}, {"q": "35. In a conventional locomotive, the C105 contactor is a ______ type of contactor.", "options": {"A": "EM", "B": "EP", "C": "Drum", "D": "Cam"}, "answer": "A"}, {"q": "211. When ATDs are provided at both ends of an OHE section, the arrangement is known as __________.", "options": {"A": "Un-Regulated OHE", "B": "Regulated OHE", "C": "Semi Regulated", "D": "Overlap OHE Regulated"}, "answer": "B"}, {"q": "160. In all types of locomotives, VCD to be acknowledged once in every ______ seconds", "options": {"A": "45", "B": "55", "C": "70", "D": "60"}, "answer": "D"}, {"q": "114. In a WAG-12B locomotive, if throttle is not responding, operate the ______ switch.", "options": {"A": "TBC Bypass", "B": "VCD Isolation", "C": "FE bypass", "D": "Zero speed bypass"}, "answer": "A"}, {"q": "154. During en-route short stoppages, the temperature of ______ in the undergear should be checked in all types of locomotives.", "options": {"A": "TM", "B": "CBC", "C": "AXLE BOX", "D": "None of the above"}, "answer": "C"}, {"q": "165. In Indian Railways, ______ type of wagons are utilized for the transportation of petroleum products.", "options": {"A": "BCN", "B": "BOB N", "C": "BOX N", "D": "BTPN"}, "answer": "D"}, {"q": "209. The nominal OHE voltage available in OHE wire is ______.", "options": {"A": "17.5 KV", "B": "22.5 KV", "C": "25 KV", "D": "27.5 KV"}, "answer": "C"}, {"q": "232. Voltage applied to Traction Motors (Phase to Phase) in WAG-9 loco is ________.", "options": {"A": "920 Max.", "B": "2180 Max.", "C": "750 Max.", "D": "1400 Max."}, "answer": "B"}]}, {"label": "Random Set 04", "type": "random", "questions": [{"q": "238. In a 3-phase locomotive provided with E-70 brake system, for charging of BP pressure ________ coc to be kept open.", "options": {"A": "136", "B": "70", "C": "74", "D": "47"}, "answer": "B"}, {"q": "121. In a 3-phase locomotive, while energizing, switch ON ______ & ______ MCB's in SB-2 panel.", "options": {"A": "110,112.1", "B": "1,12,110", "C": "1,12,122.10", "D": "126"}, "answer": "A"}, {"q": "111. In a WAG-12B locomotive, to overcome 3 Kmph trouble, the ______ switch is to be operated", "options": {"A": "TBC Bypass", "B": "VCD Isolation", "C": "FE bypass", "D": "Zero speed bypass"}, "answer": "D"}, {"q": "71. In a WAP-4 locomotive, when the hand brake is applied, the brake(s) of ______ wheel(s) are applied.", "options": {"A": "No-2 both sides, No-4 one side", "B": "No-2 both sides only", "C": "No-1 both sides, No-3 one side", "D": "None"}, "answer": "B"}, {"q": "125. In a 3-phase locomotive, operate reverser after ensuring ______ node number.", "options": {"A": "FLG 504", "B": "FLG 550", "C": "FLG 570", "D": "FLG 590"}, "answer": "C"}, {"q": "33. In a conventional locomotive, to switch on the red marker lights, the ______ and ______ switches must be closed.", "options": {"A": "BLZLF", "B": "BLLM", "C": "BLZLF, BLLF", "D": "BLLF"}, "answer": "C"}, {"q": "145. In a conventional locomotive, to isolate VCD, the ______ switch is to be operated.", "options": {"A": "ZVCD", "B": "HVCD", "C": "PVCD", "D": "None of the above"}, "answer": "B"}, {"q": "120. In a 3-phase locomotive, before energizing, ensure ______ key is ON in pneumatic panel.", "options": {"A": "IG-38", "B": "Z BAN", "C": "BL", "D": "ZPT"}, "answer": "A"}, {"q": "171. In a twin pipe air brake system ______ & ______ hose pipes are connected between the wagons/coaches.", "options": {"A": "BP", "B": "FP", "C": "MR", "D": "BP & FP"}, "answer": "D"}, {"q": "99. In a 3-phase locomotive, normal position of panto selector switch is ______.", "options": {"A": "Auto", "B": "1", "C": "2", "D": "ALL"}, "answer": "A"}, {"q": "206. In PUSH-PULL train operation, while entering into neutral section, ______ switch is to be operated.", "options": {"A": "BLDJ", "B": "ZNN", "C": "ENS", "D": "BLHO"}, "answer": "B"}, {"q": "233. Maximum speed of a WAG-9 loco is ________ KMPH.", "options": {"A": "105", "B": "110", "C": "100", "D": "120"}, "answer": "C"}, {"q": "235. In a WAG-9 locomotive, if TE is not getting more than 300 KN, check the ________ switch.", "options": {"A": "ZTEL", "B": "ZBAN", "C": "Defective Throttle", "D": "BLHO"}, "answer": "A"}, {"q": "230. During GR manual operation, the ALP shall frequently check the ______ equipment for any abnormality.", "options": {"A": "RPGR", "B": "SMGR pressure", "C": "CGR 1,2,3", "D": "RGR"}, "answer": "D"}, {"q": "29. In a WAG-7 locomotive, the MPS has ______ positions.", "options": {"A": "0,1,2,3", "B": "0,1,2", "C": "0 1", "D": "0,1,2,3,4"}, "answer": "A"}, {"q": "267. In a 3-phase locomotive, if TFP pump-1 not working, work the train ________.", "options": {"A": "Trip 62.1/1", "B": "70% TE/BE", "C": "a & b", "D": "Normal working"}, "answer": "C"}, {"q": "225. ________ type of fire extinguishers provided in a 3 phase locomotive.", "options": {"A": "CO2", "B": "Foam", "C": "water", "D": "DCP"}, "answer": "A"}, {"q": "127. In a 3-phase locomotive, grounding can be done by using ______ key.", "options": {"A": "BL", "B": "IG 38", "C": "ZPT", "D": "MPJ"}, "answer": "B"}, {"q": "131. In a 3-phase locomotive, CCB2.0 brake system, position of MODE switch in trailing cab is ______.", "options": {"A": "TRAIL", "B": "LEAD", "C": "HLPR", "D": "TEST"}, "answer": "A"}, {"q": "149. While energizing WAG-12B locomotive, switch ON ______ MCB in both sections in LP side battery box.", "options": {"A": "100", "B": "112", "C": "110", "D": "112.1"}, "answer": "A"}, {"q": "248. In a 3-phase locomotive, SR oil/water circulating pump is getting supply from ________.", "options": {"A": "AC 2", "B": "AC 3", "C": "AC 1", "D": "None"}, "answer": "A"}, {"q": "205. In PUSH-PULL train operation, leading loco is called ______ and rear loco is called ______.", "options": {"A": "Master, Slave", "B": "Slave, Master", "C": "Master, Master", "D": "Slave, Slave"}, "answer": "A"}, {"q": "221. When a Fog Pass Device is provided in the locomotive, in Automatic Block Signalling (ABS) territory, after passing an Automatic Stop Signal displaying a Double Yellow aspect, the speed of the train shall not exceed ______ KMPH.", "options": {"A": "Restricted speed to stop at next stop signal", "B": "30 KMPH", "C": "40 KMPH", "D": "20 KMPH"}, "answer": "B"}, {"q": "110. In a WAG-12B locomotive, regenerative braking can be used above ______ KMPH.", "options": {"A": "0.5", "B": "5", "C": "3", "D": "10"}, "answer": "D"}, {"q": "150. In a WAG-12B locomotive, panto toggle switch is having ______ no. of positions.", "options": {"A": "1", "B": "2", "C": "3", "D": "4"}, "answer": "D"}, {"q": "213. As per latest instructions, how many SIGMA boards are provided while approaching the stop signal ______.", "options": {"A": "1", "B": "2", "C": "3", "D": "4"}, "answer": "A"}, {"q": "251. In a WAG-12B locomotive, auxiliaries are getting supply from E-Block of ________.", "options": {"A": "ALP side", "B": "LP side", "C": "AC 1", "D": "None"}, "answer": "B"}, {"q": "64. In a conventional locomotive, BP pipe is charged with ______ reservoir pressure.", "options": {"A": "MR1", "B": "MR 2", "C": "MR3", "D": "MR4"}, "answer": "C"}, {"q": "36. In a conventional locomotive, when HCP is kept on 3rd position, the ______ contactor closes.", "options": {"A": "C101", "B": "C103", "C": "C102", "D": "C108"}, "answer": "B"}, {"q": "218. During dense fog, fog safety device is working, maximum speed of a train in Absolute block system is restricted to___________", "options": {"A": "65 Kmph", "B": "75 Kmph", "C": "70 Kmph", "D": "80 Kmph"}, "answer": "B"}, {"q": "37. In a conventional locomotive, when HVRH is kept on 1st or 3rd position, the ______ auxiliary works.", "options": {"A": "QVRH", "B": "MVRH & QVRH", "C": "MVRH", "D": "MPH"}, "answer": "C"}, {"q": "214. In the event of a locomotive failure, crew issue, or any abnormality, information shall be given to ______.", "options": {"A": "ADEE", "B": "Sr.DEE", "C": "TPC", "D": "TLC"}, "answer": "D"}, {"q": "102. Maximum permissible speed of a WAP 5 locomotive is ______ KMPH.", "options": {"A": "100", "B": "120", "C": "130", "D": "160"}, "answer": "D"}, {"q": "128. In a 3-phase MU locomotive, position of 136 COC in leading locomotive is ______.", "options": {"A": "TRAIL", "B": "OPEN", "C": "LEAD", "D": "CLOSE"}, "answer": "B"}, {"q": "158. During PUSH PULL operation of WAP-5 locomotives, slave loco position of 136 cock is ______.", "options": {"A": "Open", "B": "Close", "C": "45 degrees", "D": "135 degrees"}, "answer": "B"}, {"q": "162. While making EOT with H-type CBC coupling, the speed of the locomotive is ______ KMPH.", "options": {"A": "2-2.5", "B": "2 to 3", "C": "3 to 5", "D": "0.5 to 0.8"}, "answer": "B"}, {"q": "146. In a WAG-7 locomotive, while conducting loco brake power test, the locomotive should not move at ______ amperes.", "options": {"A": "500", "B": "600", "C": "700", "D": "800"}, "answer": "B"}, {"q": "55. In a conventional locomotive, to close DJ, ______ push button switch to be operated", "options": {"A": "BP1DJ", "B": "BP2DJ", "C": "BLDJ", "D": "BPSW"}, "answer": "B"}, {"q": "259. In a WAP-5 locomotive, ________ wheels are having Parking brake facility.", "options": {"A": "2,6,7,11", "B": "2,7", "C": "1,4,5,8", "D": "1 & 4"}, "answer": "C"}, {"q": "183. In BMBS provided wagons, during Empty condition, APM sends maximum pressure in BC is ______ kg/cm2.", "options": {"A": "2.2", "B": "3", "C": "3.5", "D": "3.8"}, "answer": "A"}]}, {"label": "Random Set 05", "type": "random", "questions": [{"q": "103. In a WAG-12B locomotive, Max. Tractive Effort with 22.5T axle load is ______ KN .", "options": {"A": "514", "B": "706", "C": "780", "D": "520"}, "answer": "B"}, {"q": "81. In a conventional locomotive, QD-2 is connected between ______ & ______ TMs.", "options": {"A": "2 & 3", "B": "1 & 3", "C": "2 & 4", "D": "4 & 5"}, "answer": "D"}, {"q": "9. In a WAG-7 locomotive, the wipers are supplied with pneumatic pressure from the", "options": {"A": "MR1", "B": "MR2", "C": "MR3", "D": "MR4"}, "answer": "B"}, {"q": "198. In a conventional EMU and MEMU, ______ & ______ brake systems are provided", "options": {"A": "EP only", "B": "Auto only", "C": "EP & Auto", "D": "None of above"}, "answer": "C"}, {"q": "15. Fuse rating of CCBA is ______ amps.", "options": {"A": "6", "B": "10", "C": "16", "D": "35"}, "answer": "D"}, {"q": "84. Maximum Tractive Effort of WAG-9H locomotive is ______ KN .", "options": {"A": "514", "B": "706", "C": "780", "D": "520"}, "answer": "D"}, {"q": "244. In a WAP-5 locomotive, during loco brake power test, locomotive should not move up to ________ KN.", "options": {"A": "100", "B": "120", "C": "150", "D": "140"}, "answer": "A"}, {"q": "143. In a conventional MU locomotive, the position of A8 COC in leading locomotive is", "options": {"A": "TRAIL", "B": "OPEN", "C": "LEAD", "D": "CLOSE"}, "answer": "B"}, {"q": "164. In goods wagons, ______ is a open wagon.", "options": {"A": "BCN", "B": "BOB N", "C": "BOX N", "D": "BTPN"}, "answer": "C"}, {"q": "70. In a WAG-7 locomotive, when the hand brake is applied, the brakes of the ______ and ______ wheels are applied.", "options": {"A": "No-2 both sides, No-4 one side", "B": "No-2 both sides only", "C": "No-1 both sides, No-3 one side", "D": "None"}, "answer": "A"}, {"q": "193. Air/BP continuity test is to be done between ______.", "options": {"A": "LP & ALP", "B": "LP only", "C": "TMR only", "D": "TMR & LP"}, "answer": "D"}, {"q": "119. In a conventional locomotive, if the flasher light is not glowing, check the ______ fuse.", "options": {"A": "CCAFL", "B": "CCLF", "C": "CCLC", "D": "CCFL"}, "answer": "D"}, {"q": "188. While working a train, if an ACP occurs, the prescribed whistle code is ______.", "options": {"A": "2 short, 1 long", "B": "1 short, 1 long", "C": "2 short, 2 long", "D": "2 long, 1 short"}, "answer": "A"}, {"q": "63. In a conventional locomotive, Feed Pipe is charged with ______ reservoir pressure.", "options": {"A": "MR1", "B": "MR 2", "C": "MR3", "D": "MR4"}, "answer": "B"}, {"q": "137. In a conventional locomotive, a minimum pneumatic pressure of ______ is required for energization.", "options": {"A": "Above 6 kg/cm2", "B": "Above 7kg/cm2", "C": "Above 6.5 kg/cm2", "D": "Above 8 kg/cm2"}, "answer": "C"}, {"q": "44. In a 3-phase locomotive, the BLCP switch are having ______ positions.", "options": {"A": "AUTO", "B": "OFF", "C": "MAN", "D": "Above all"}, "answer": "D"}, {"q": "190. When FIBA acted, FIBA indicator shows ______ colour.", "options": {"A": "Green", "B": "Red", "C": "Yellow", "D": "Pink"}, "answer": "B"}, {"q": "156. During long haul operation if conventional Locomotive is in the middle, A 8 COC position is ________.", "options": {"A": "OPEN", "B": "CLOSE", "C": "SOME TIMES OPEN", "D": "None of the above"}, "answer": "B"}, {"q": "19. Location of Addl.CCBA fuse is in ______.", "options": {"A": "BA Box 2", "B": "BA Box 1", "C": "BA Box 4", "D": "Switch Panel"}, "answer": "B"}, {"q": "166. Nomenclature for 4 wheeler brake van (BV) is ______.", "options": {"A": "BCN", "B": "BVZC", "C": "BOX N", "D": "BTPN"}, "answer": "B"}, {"q": "175. In a bogie-mounted brake system wagon, in place of Load/Empty handle, ______ is provided.", "options": {"A": "APM", "B": "AMP", "C": "DV", "D": "None of the above"}, "answer": "A"}, {"q": "247. In a 3-phase locomotive, Traction Motor Blower is getting supply from ________.", "options": {"A": "AC 2", "B": "AC 3", "C": "AC 1", "D": "None"}, "answer": "A"}, {"q": "69. In a WAP-4 locomotive, ______ type of bogie is provided.", "options": {"A": "CO-CO Trimount", "B": "CO-CO Tetra high adhesion", "C": "CO-CO flexi coil bogie", "D": "CO-CO Special design"}, "answer": "C"}, {"q": "172. In an underframe-mounted brake system wagon, ______ no. of brake cylinders are provided.", "options": {"A": "1", "B": "2", "C": "3", "D": "4"}, "answer": "A"}, {"q": "54. In a WAG-12B locomotive, ______ indicators are available in TLB panel.", "options": {"A": "TE/BE", "B": "OHE", "C": "Battery", "D": "All"}, "answer": "D"}, {"q": "91. In a 3-phase locomotive, Auxiliary Converter No. 1 feeds the ______ and ______ motors.", "options": {"A": "TMB1, TMB2", "B": "TFP1 & TFP 2", "C": "OCB1, OCB2", "D": "MCP1 & MCP 2"}, "answer": "C"}, {"q": "95. In a 3-phase locomotive, positions of panto selector switch are ______.", "options": {"A": "Auto", "B": "1", "C": "2", "D": "ALL"}, "answer": "D"}, {"q": "42. In a 3-phase locomotive, the BL key are having ______ positions.", "options": {"A": "OFF,D", "B": "OFF,D,C", "C": "OFF, C", "D": "ON,OFF"}, "answer": "B"}, {"q": "94. In a 3-phase locomotive, positions of 154 switch are ______.", "options": {"A": "I", "B": "II", "C": "I-II", "D": "NORM, I,II,I+II"}, "answer": "D"}, {"q": "163. In goods wagons, ______ is a covered wagon.", "options": {"A": "BCN", "B": "BOB N", "C": "BOX N", "D": "BTPN"}, "answer": "A"}, {"q": "117. In a WAG-12B locomotive, each section consists of ______ nos. of E-Blocks.", "options": {"A": "2", "B": "4", "C": "1", "D": "3"}, "answer": "A"}, {"q": "231. When the Q45 relay is in the wedged condition, operate only the ________ switch to close the VCB.", "options": {"A": "BP1DJ", "B": "BLDJ", "C": "BP2DJ", "D": "BLSN"}, "answer": "B"}, {"q": "224. ________ type of fire extinguishers provided in a conventional loco.", "options": {"A": "CO2", "B": "Foam", "C": "water", "D": "DCP"}, "answer": "D"}, {"q": "26. When the CHBA is not working, the ______ lamp glows on the LP's desk.", "options": {"A": "LSOL", "B": "LSDJ", "C": "LSCHBA", "D": "LSP"}, "answer": "C"}, {"q": "255. In a WAG-12B locomotive, the pantograph toggle switch positions are ________.", "options": {"A": "Raise & Lower", "B": "raise & Lower & None", "C": "Raise, None, Lower, Emergency", "D": "Rear, Front & both"}, "answer": "C"}, {"q": "210. Normal height of contact wire is ______ meters.", "options": {"A": "5", "B": "5.55", "C": "5.6", "D": "6"}, "answer": "B"}, {"q": "75. In a conventional locomotive, Q20 relay energizes at ______ volts.", "options": {"A": "700", "B": "750", "C": "790", "D": "820"}, "answer": "C"}, {"q": "59. In a conventional locomotive, starting phase of ARNO is suppressed by ______ relay.", "options": {"A": "QCVAR", "B": "QVSI", "C": "QVSL", "D": "QCON"}, "answer": "A"}, {"q": "170. In a single pipe air brake system, ______ hose pipe is connected between the wagons/coaches.", "options": {"A": "BP", "B": "FP", "C": "MR", "D": "BP or FP"}, "answer": "A"}, {"q": "216. When a train stops in an Automatic Block Signalling section on a double-line (BG) and is unable to proceed further, the Loco Pilot (LP) shall protect the adjacent line in the front by placing detonators at a distance of ________.", "options": {"A": "600, 1000", "B": "1000, 1010", "C": "60,01,200", "D": "600, 1200, 1210 &1220 Mtrs"}, "answer": "D"}]}, {"label": "Random Set 06", "type": "random", "questions": [{"q": "18. Fuse rating of CCLS is ______ amps.", "options": {"A": "6", "B": "10", "C": "16", "D": "35"}, "answer": "B"}, {"q": "181. The maximum brake cylinder (BC) pressure in a wagon/coach during the Full Service or Emergency brake application is ______ kg/cm².", "options": {"A": "2.5", "B": "3", "C": "3.5", "D": "3.8"}, "answer": "D"}, {"q": "50. In a WAG-12B locomotive, the panto selector switch is provided in ______ panel.", "options": {"A": "TLB", "B": "Below DDU", "C": "Central Panel", "D": "CCR"}, "answer": "D"}, {"q": "148. In a WAG-12B locomotive, ______ minimum BA voltage is required.", "options": {"A": "90 Volts", "B": "Above 90 volts", "C": "Below 90 volts", "D": "Above 92 volts"}, "answer": "D"}, {"q": "93. In a 3-phase locomotive, hotel load facility is available in ______ loco(s).", "options": {"A": "WAP5", "B": "WAP7", "C": "All WAP-5 and modified WAP-7", "D": "WAP4"}, "answer": "C"}, {"q": "159. During PUSH PULL operation of WAP-7 locomotive, while negotiating neutral section, the ______ switch shall be in ON position.", "options": {"A": "ZTEL", "B": "ZNN", "C": "ZPT", "D": "ZBAN"}, "answer": "B"}, {"q": "161. In CCB2 brake system provided locomotives, to reset VCD penalty, wait for ______ seconds after keeping Throttle/TBC handle on neutral position.", "options": {"A": "32", "B": "160", "C": "45", "D": "55"}, "answer": "A"}, {"q": "76. In a conventional locomotive, earth fault protection relay for TPC-1 is ______.", "options": {"A": "QLA", "B": "QOA", "C": "QRSI", "D": "QOP 1"}, "answer": "D"}, {"q": "142. In a conventional MU locomotive, the position of MU2B in trailing locomotive is ______.", "options": {"A": "TRAIL", "B": "DEAD", "C": "LEAD", "D": "None of the above"}, "answer": "A"}, {"q": "21. For progressing of the notches, the ______ push button is provided on the LP's desk.", "options": {"A": "BPR", "B": "BPT", "C": "BPP", "D": "BPSW"}, "answer": "C"}, {"q": "97. In a 3-phase locomotive with Knorr Brakes, the Mode Switch in the trailing cab is kept in the ______ position.", "options": {"A": "TRAIL", "B": "LEAD", "C": "TEST", "D": "HLPR"}, "answer": "A"}, {"q": "32. In a conventional locomotive, to start blowers, the ______ switch is to be closed.", "options": {"A": "BLDJ", "B": "BLRDJ", "C": "BLVMT,", "D": "BLDJ, BLRDJ"}, "answer": "C"}, {"q": "138. In a conventional locomotive, when ZPT handle operated to '1' position, ______ pantograph will raise.", "options": {"A": "BOTH", "B": "REAR", "C": "NONE", "D": "FRONT"}, "answer": "B"}, {"q": "118. In a WAG-12B locomotive, location of MCPA is ______.", "options": {"A": "BCM", "B": "PCU", "C": "Side of BCM", "D": "MASU"}, "answer": "D"}, {"q": "187. While issuing Closed Circuit (CC) type of BPC ______% of brake power is required.", "options": {"A": "100", "B": "85", "C": "90", "D": "95"}, "answer": "A"}, {"q": "12. Location of BP1DJ and BP2DJ in WAP4 locomotive ______.", "options": {"A": "Pn.Panel", "B": "Cab-1", "C": "MC-1", "D": "Relay panel"}, "answer": "D"}, {"q": "236. To perform shunting with 3-phase locomotive, keep ________ switch in ________ position.", "options": {"A": "152, 0", "B": "237.1, 0", "C": "154, I", "D": "160, 0"}, "answer": "D"}, {"q": "68. In a WAG-7 locomotive, ______ type of bogie is provided.", "options": {"A": "CO-CO Trimount", "B": "CO-CO Tetra high adhesion", "C": "CO-CO flexi coil bogie", "D": "CO-CO Special design"}, "answer": "B"}, {"q": "253. In a 3-phase locomotive, normal position of pantograph selector switch is ________.", "options": {"A": "1", "B": "2", "C": "3", "D": "Auto"}, "answer": "D"}, {"q": "89. In a 3-phase locomotive, the battery charger output MCB No. is ______ and is located in ______.", "options": {"A": "110, SB1", "B": "100, HB1", "C": "110, SB2", "D": "100 SB 2"}, "answer": "C"}, {"q": "260. In a WAG-12B locomotive, for each section, ________ wheels are having parking brake facility.", "options": {"A": "2,6,7,11", "B": "2,7", "C": "1,4,5,8", "D": "1 & 4"}, "answer": "C"}, {"q": "92. In a 3-phase locomotive, parking brakes are applied and released through ______ switch in Panel 'A'.", "options": {"A": "SV 30", "B": "BPPB", "C": "BPCS", "D": "BPVR"}, "answer": "B"}, {"q": "25. When the VCB is open, the ______ lamp glows on the LP's desk.", "options": {"A": "LSOL", "B": "LSDJ", "C": "LSRSI", "D": "LSP"}, "answer": "B"}, {"q": "98. In a 3-phase locomotive, TMB-1 cools ______ TMs.", "options": {"A": "1", "B": "2", "C": "3", "D": "All"}, "answer": "D"}, {"q": "24. In conventional locos, for quick charging of BP pressure ______ switch is provided on LP's desk.", "options": {"A": "BPR", "B": "BPT", "C": "BPP", "D": "BPSW"}, "answer": "D"}, {"q": "27. When the MPJ is kept on Forward/Reverse side, the ______ lamp extinguishes on LP's desk.", "options": {"A": "LSOL", "B": "LSDJ", "C": "LSCHBA", "D": "LSB"}, "answer": "D"}, {"q": "87. In a 3-phase locomotive, the battery charger gets supply from ______.", "options": {"A": "Aux. Converter 1", "B": "Aux. Converter 2", "C": "Aux. Converter 3", "D": "Independent"}, "answer": "C"}, {"q": "196. In a 3-phase locomotive, CCB-2.0 Knorr brake system provided locomotives, during BP continuity test ______ to be kept on TEST before dropping of BP pressure by TMR.", "options": {"A": "47", "B": "Mode switch", "C": "70", "D": "74"}, "answer": "B"}, {"q": "56. In a conventional locomotive, QLM is provided in ______ power circuit.", "options": {"A": "TPC 1", "B": "TPC 2", "C": "Feeding", "D": "Aux.Power Ckt"}, "answer": "C"}, {"q": "40. In a 3-phase locomotive, the location of LSVW is in ______ panel.", "options": {"A": "Panel D", "B": "Panel A", "C": "Panel B", "D": "Panel C"}, "answer": "B"}, {"q": "241. In WAG-9/WAP-7 locomotives, during loco brake power test, locomotive should not move up to ________ KN.", "options": {"A": "100", "B": "120", "C": "150", "D": "140"}, "answer": "C"}, {"q": "88. In a 3-phase locomotive, (E-70 brake system), for charging of BP pressure ______ coc to be kept open.", "options": {"A": "74", "B": "70", "C": "136", "D": "47"}, "answer": "B"}, {"q": "109. Horse Power of WAG-12B Locomotive is ______.", "options": {"A": "5400", "B": "6000", "C": "9000", "D": "12000"}, "answer": "D"}, {"q": "179. The BP pressure in the locomotive is ______ kg/cm², and in the BV/LV of a train with up to 58 wagons, it is ______ kg/cm².", "options": {"A": "5; 4.8", "B": "6; 4.8", "C": "5; 4.6", "D": "5; 4.7"}, "answer": "A"}, {"q": "41. In a 3-phase locomotive, BPFA and LSFI are provided in ________ panel.", "options": {"A": "Panel D", "B": "Panel A", "C": "Panel B", "D": "Panel C"}, "answer": "D"}, {"q": "207. In PUSH-PULL train operation, while changing cab, ______ locomotive's CE to be switched OFF.", "options": {"A": "Master", "B": "Slave", "C": "Both", "D": "Not required"}, "answer": "C"}, {"q": "195. In 3-phase locomotive, E-70 brake system provided locomotives, during BP continuity test _________ coc to be closed before dropping of BP pressure by TMR.", "options": {"A": "47", "B": "136", "C": "70", "D": "74"}, "answer": "C"}, {"q": "2. No railway servant shall be directly connected with the working of trains while under the influence of ______.", "options": {"A": "Alcohol", "B": "Sedatives & stimulant drugs", "C": "Narcotics", "D": "All of the above"}, "answer": "D"}, {"q": "223. In the event of a fire accident in a passenger-carrying train, the first objective is to ________.", "options": {"A": "Protection", "B": "train securing", "C": "Giving information", "D": "Safety of passengers"}, "answer": "D"}, {"q": "208. To work the train without guard, ______ permission is required.", "options": {"A": "Sr.DEE", "B": "Sr.DOM", "C": "Sr.DEN", "D": "All of the"}, "answer": "B"}]}, {"label": "Random Set 07", "type": "random", "questions": [{"q": "263. If the MVRH is isolated, observe a starting current of ______ for the first 5 minutes and a continuous current of ______ for the traction motors (TMs).", "options": {"A": "750, 750", "B": "750, 500", "C": "920, 500", "D": "920, 750"}, "answer": "C"}, {"q": "151. While energizing WAG-12B locomotive, after getting 'NO ACTIVE CAB' message on display, ______ key to be operated.", "options": {"A": "MASCON", "B": "KABA", "C": "PATRA", "D": "ZPT"}, "answer": "A"}, {"q": "264. If MVMT-1 not working, keep ________ switches on '0'.", "options": {"A": "HVMT-1", "B": "MVSI-1", "C": "HVSL-1", "D": "ALL"}, "answer": "D"}, {"q": "57. In a conventional locomotive, transformer oil should be above ______ Degree", "options": {"A": "10", "B": "20", "C": "+15", "D": "-15"}, "answer": "C"}, {"q": "108. In a WAG-12B locomotive, the total number of TMs provided in one section is ______.", "options": {"A": "6", "B": "4", "C": "8", "D": "12"}, "answer": "B"}, {"q": "140. In a conventional locomotive, grounding can be done by using ______ key.", "options": {"A": "BL", "B": "MPJ", "C": "ZPT", "D": "KABA"}, "answer": "C"}, {"q": "180. The BP pressure in the locomotive is ______ kg/cm² and in the BV/LV of a train more than 58 wagons is ______ kg/cm².", "options": {"A": "5; 4.8", "B": "6; 4.8", "C": "5; 4.6", "D": "5; 4.7"}, "answer": "D"}, {"q": "167. Nomenclature for 8 wheeler brake van (BV) is ______.", "options": {"A": "BCN", "B": "BVZC", "C": "BVZI", "D": "BTPN"}, "answer": "C"}, {"q": "184. For coaching trains, the percentage of Brake Power is ______.", "options": {"A": "90", "B": "95", "C": "98", "D": "100"}, "answer": "D"}, {"q": "51. In a WAG-12B locomotive, the memory freeze switch is provided in ______ panel.", "options": {"A": "TLB", "B": "Below DDU", "C": "Central Panel", "D": "CCR"}, "answer": "C"}, {"q": "144. In a conventional MU locomotive, the position of A8 COC in trailing locomotive is", "options": {"A": "TRAIL", "B": "OPEN", "C": "LEAD", "D": "CLOSE"}, "answer": "D"}, {"q": "7. The A9 is called the ______ Brake Valve and has five operating positions: Release, Minimum Reduction, Full Service, Over Reduction, and Emergency.", "options": {"A": "A9", "B": "SA9", "C": "RS", "D": "Auto"}, "answer": "D"}, {"q": "155. In a WAG-12B locomotive, grounding can be done by using ______ key.", "options": {"A": "MASCON", "B": "KABA", "C": "PATRA", "D": "ZSEC"}, "answer": "B"}, {"q": "130. In a 3-phase locomotive, CCB2.0 brake system, position of A9 handle in trailing cab is ______.", "options": {"A": "RUN", "B": "FS", "C": "FS & Lock", "D": "Emergency"}, "answer": "C"}, {"q": "60. In a conventional locomotive, in ARNO provided locomotives, earth fault protection relay for auxiliary power circuit equipment is ______.", "options": {"A": "QLA", "B": "QOA", "C": "QRSI", "D": "QOP"}, "answer": "B"}, {"q": "112. In a WAG-12B locomotive, ______ no. of 3-phase auxiliary motors are provided in each section.", "options": {"A": "13", "B": "12", "C": "10", "D": "9"}, "answer": "A"}, {"q": "48. In a WAG-12B locomotive, the fire extinguisher override switch is available in ______ panel.", "options": {"A": "TLB", "B": "Below DDU", "C": "Central Panel", "D": "CCR"}, "answer": "D"}, {"q": "16. Fuse rating of CCA is ______ amps.", "options": {"A": "6", "B": "10", "C": "16", "D": "35"}, "answer": "A"}, {"q": "17. Fuse rating of CCPT is ______ amps.", "options": {"A": "6", "B": "10", "C": "16", "D": "35"}, "answer": "C"}, {"q": "217. When a train stops in an automatic block signaling section on a double-line (BG) and is unable to proceed further, the Crew shall protect in rear of the train in same line duly placing detonators at a distance of ________.", "options": {"A": "90, 180, Mtrs", "B": "90, 180, 190 Mtrs", "C": "90, 190 Mtrs", "D": "90, Mtrs"}, "answer": "B"}, {"q": "45. In a 3-phase locomotive, the ______ type of SPM is provided.", "options": {"A": "Memotel", "B": "ESMON", "C": "Speed indicator", "D": "Special type"}, "answer": "A"}, {"q": "53. In a WAG-12B locomotive, the ______ switch is provided at LP right side to test signalling lamps.", "options": {"A": "TSAFL", "B": "Lamp test", "C": "Flasher", "D": "ZLS"}, "answer": "B"}, {"q": "72. In a conventional locomotive, CGR 1,2, 3 are having ______ type of contactors.", "options": {"A": "EM", "B": "EP", "C": "Line", "D": "Cam"}, "answer": "D"}, {"q": "115. In a WAG-12B locomotive, the panto isolation cock is located at ______.", "options": {"A": "BCM", "B": "PCU", "C": "Side of BCM", "D": "MASU"}, "answer": "B"}, {"q": "126. In a 3-phase locomotive, operate reverser after ensuring the MR pressure is above ______ kg/cm2.", "options": {"A": "5", "B": "5.2", "C": "5.5", "D": "6.4"}, "answer": "D"}, {"q": "141. In a conventional MU locomotive, the position of MU2B in leading locomotive is ______.", "options": {"A": "LEAD", "B": "TRAIL", "C": "DEAD", "D": "None of the above"}, "answer": "A"}, {"q": "13. Location of LSC145 in WAG5 locomotive ______.", "options": {"A": "Pn.Panel", "B": "Cab-1", "C": "MC-1", "D": "Relay panel"}, "answer": "D"}, {"q": "58. In a conventional locomotive, transformer oil is circulated by ______ auxiliary motor.", "options": {"A": "MVRH", "B": "MPH", "C": "MVSI", "D": "MVSL"}, "answer": "B"}]}], "aim": [{"label": "AIM 1-6", "type": "aim", "questions": [{"q": "35. In a conventional locomotive, the C105 contactor is a ______ type of contactor.", "options": {"A": "EM", "B": "EP", "C": "Drum", "D": "Cam"}, "answer": "A"}, {"q": "51. In a WAG-12B locomotive, the memory freeze switch is provided in ______ panel.", "options": {"A": "TLB", "B": "Below DDU", "C": "Central Panel", "D": "CCR"}, "answer": "C"}, {"q": "23. For testing of signalling lamps ______ push button is provided on LP's desk.", "options": {"A": "BPR", "B": "BPT", "C": "BPP", "D": "BPSW"}, "answer": "B"}, {"q": "22. For regressing of the notches, the ______ push button is provided on the LP's desk.", "options": {"A": "BPR", "B": "BPT", "C": "BPP", "D": "BPSW"}, "answer": "A"}, {"q": "37. In a conventional locomotive, when HVRH is kept on 1st or 3rd position, the ______ auxiliary works.", "options": {"A": "QVRH", "B": "MVRH & QVRH", "C": "MVRH", "D": "MPH"}, "answer": "C"}, {"q": "30. To use sanders, the ______ pedal switch to be operated.", "options": {"A": "PVEF", "B": "PSA", "C": "PVCD", "D": "None"}, "answer": "B"}, {"q": "29. In a WAG-7 locomotive, the MPS has ______ positions.", "options": {"A": "0,1,2,3", "B": "0,1,2", "C": "0 1", "D": "0,1,2,3,4"}, "answer": "A"}, {"q": "26. When the CHBA is not working, the ______ lamp glows on the LP's desk.", "options": {"A": "LSOL", "B": "LSDJ", "C": "LSCHBA", "D": "LSP"}, "answer": "C"}, {"q": "7. The A9 is called the ______ Brake Valve and has five operating positions: Release, Minimum Reduction, Full Service, Over Reduction, and Emergency.", "options": {"A": "A9", "B": "SA9", "C": "RS", "D": "Auto"}, "answer": "D"}, {"q": "6. The ______ brake is known as the Independent Brake Valve, which is used for the application and release of locomotive brakes.", "options": {"A": "A9", "B": "SA9", "C": "RS", "D": "None"}, "answer": "B"}, {"q": "9. In a WAG-7 locomotive, the wipers are supplied with pneumatic pressure from the", "options": {"A": "MR1", "B": "MR2", "C": "MR3", "D": "MR4"}, "answer": "B"}, {"q": "17. Fuse rating of CCPT is ______ amps.", "options": {"A": "6", "B": "10", "C": "16", "D": "35"}, "answer": "C"}, {"q": "8. In a WAG-7 locomotive, the horns are supplied with pneumatic pressure from the", "options": {"A": "MR1", "B": "MR2", "C": "MR3", "D": "MR4"}, "answer": "D"}, {"q": "49. In a WAG-12B locomotive, the TBC bypass switch is provided in ______ panel.", "options": {"A": "TLB", "B": "Below DDU", "C": "Central Panel", "D": "CCR"}, "answer": "D"}, {"q": "13. Location of LSC145 in WAG5 locomotive ______.", "options": {"A": "Pn.Panel", "B": "Cab-1", "C": "MC-1", "D": "Relay panel"}, "answer": "D"}, {"q": "21. For progressing of the notches, the ______ push button is provided on the LP's desk.", "options": {"A": "BPR", "B": "BPT", "C": "BPP", "D": "BPSW"}, "answer": "C"}, {"q": "32. In a conventional locomotive, to start blowers, the ______ switch is to be closed.", "options": {"A": "BLDJ", "B": "BLRDJ", "C": "BLVMT,", "D": "BLDJ, BLRDJ"}, "answer": "C"}, {"q": "36. In a conventional locomotive, when HCP is kept on 3rd position, the ______ contactor closes.", "options": {"A": "C101", "B": "C103", "C": "C102", "D": "C108"}, "answer": "B"}, {"q": "39. In a 3-phase locomotive, the location of Emergency Stop Push Button switch is ______.", "options": {"A": "Panel D", "B": "Panel A", "C": "Panel B", "D": "Panel C"}, "answer": "B"}, {"q": "44. In a 3-phase locomotive, the BLCP switch are having ______ positions.", "options": {"A": "AUTO", "B": "OFF", "C": "MAN", "D": "Above all"}, "answer": "D"}, {"q": "4. The maximum total duty hours permitted for running staff in a fortnight are ______", "options": {"A": "96", "B": "104", "C": "100", "D": "98"}, "answer": "B"}, {"q": "50. In a WAG-12B locomotive, the panto selector switch is provided in ______ panel.", "options": {"A": "TLB", "B": "Below DDU", "C": "Central Panel", "D": "CCR"}, "answer": "D"}, {"q": "18. Fuse rating of CCLS is ______ amps.", "options": {"A": "6", "B": "10", "C": "16", "D": "35"}, "answer": "B"}, {"q": "54. In a WAG-12B locomotive, ______ indicators are available in TLB panel.", "options": {"A": "TE/BE", "B": "OHE", "C": "Battery", "D": "All"}, "answer": "D"}, {"q": "2. No railway servant shall be directly connected with the working of trains while under the influence of ______.", "options": {"A": "Alcohol", "B": "Sedatives & stimulant drugs", "C": "Narcotics", "D": "All of the above"}, "answer": "D"}, {"q": "43. In a 3-phase locomotive, 'U' meter shows ______ voltage.", "options": {"A": "TM", "B": "OHE", "C": "OHE & AUX.", "D": "Aux.Power Ckt"}, "answer": "B"}, {"q": "20. PVEF is ______ type of switch", "options": {"A": "Pedal", "B": "Rotating", "C": "BL", "D": "Toggle"}, "answer": "A"}, {"q": "46. In a 3-phase locomotive, the PTDC handle is provided in ______ brake system.", "options": {"A": "IRAB", "B": "E 70", "C": "CCB 2.0", "D": "None"}, "answer": "C"}, {"q": "25. When the VCB is open, the ______ lamp glows on the LP's desk.", "options": {"A": "LSOL", "B": "LSDJ", "C": "LSRSI", "D": "LSP"}, "answer": "B"}, {"q": "38. In a conventional locomotive, when HMCS-1 is kept on 3rd position, the ______ line contactor will not close.", "options": {"A": "L1", "B": "L2", "C": "L3", "D": "L4"}, "answer": "B"}, {"q": "47. In a 3-phase locomotive, the 'UBA' voltmeter shows BA Voltage in ______ mode(s).", "options": {"A": "Self hold", "B": "Drive", "C": "Cooling", "D": "Drive & Cooling"}, "answer": "D"}, {"q": "3. The Chalak-Dal mobile application is the official app developed by ______ for running staff of Indian Railways.", "options": {"A": "COIS", "B": "CRIS", "C": "CMS", "D": "FOIS"}, "answer": "B"}, {"q": "42. In a 3-phase locomotive, the BL key are having ______ positions.", "options": {"A": "OFF,D", "B": "OFF,D,C", "C": "OFF, C", "D": "ON,OFF"}, "answer": "B"}, {"q": "15. Fuse rating of CCBA is ______ amps.", "options": {"A": "6", "B": "10", "C": "16", "D": "35"}, "answer": "D"}, {"q": "10. Location of A-8 COC in WAG 5 (non modified cabs) locomotive is ______.", "options": {"A": "MC-1", "B": "Cab-1 below A9", "C": "Cab-2", "D": "MC-2"}, "answer": "B"}, {"q": "5. According to the Running Staff Rest Rules, the minimum rest period at headquarters after performing less than 5 hours of duty is ______ hours.", "options": {"A": "5+1", "B": "12", "C": "16", "D": "16+2"}, "answer": "C"}, {"q": "28. When BPT is pressed, the ______ lamp (s) glows on LP's desk.", "options": {"A": "LSOl, LSDJ", "B": "LSDJ, LSP", "C": "LSRSI, LSP", "D": "LSB,LSP"}, "answer": "C"}, {"q": "24. In conventional locos, for quick charging of BP pressure ______ switch is provided on LP's desk.", "options": {"A": "BPR", "B": "BPT", "C": "BPP", "D": "BPSW"}, "answer": "D"}, {"q": "40. In a 3-phase locomotive, the location of LSVW is in ______ panel.", "options": {"A": "Panel D", "B": "Panel A", "C": "Panel B", "D": "Panel C"}, "answer": "B"}, {"q": "1. Crew cannot sign ON in the CMS more than ______ minutes before or after their scheduled sign-on time.", "options": {"A": "20", "B": "30", "C": "45", "D": "60"}, "answer": "B"}, {"q": "16. Fuse rating of CCA is ______ amps.", "options": {"A": "6", "B": "10", "C": "16", "D": "35"}, "answer": "A"}, {"q": "34. In a conventional locomotive, to switch on the front head light, the ______ switch to be kept at ON.", "options": {"A": "BLZLF", "B": "BLLM", "C": "BLPRF", "D": "BLPRR"}, "answer": "C"}, {"q": "52. In a WAG-12B locomotive, the VCD.ACK/RESET push button is located at ______.", "options": {"A": "TLB", "B": "Below DDU", "C": "Central Panel", "D": "CCR"}, "answer": "C"}, {"q": "12. Location of BP1DJ and BP2DJ in WAP4 locomotive ______.", "options": {"A": "Pn.Panel", "B": "Cab-1", "C": "MC-1", "D": "Relay panel"}, "answer": "D"}, {"q": "33. In a conventional locomotive, to switch on the red marker lights, the ______ and ______ switches must be closed.", "options": {"A": "BLZLF", "B": "BLLM", "C": "BLZLF, BLLF", "D": "BLLF"}, "answer": "C"}, {"q": "48. In a WAG-12B locomotive, the fire extinguisher override switch is available in ______ panel.", "options": {"A": "TLB", "B": "Below DDU", "C": "Central Panel", "D": "CCR"}, "answer": "D"}, {"q": "14. Location of HOBA in WAG7 locomotive ______.", "options": {"A": "Switch Panel", "B": "Cab-1", "C": "MC-1", "D": "Relay panel"}, "answer": "A"}, {"q": "31. In a conventional locomotive, to close VCB ______ & ______ switches are to be closed.", "options": {"A": "BLDJ", "B": "BLRDJ", "C": "BLVMT,", "D": "BLDJ, BLRDJ"}, "answer": "D"}, {"q": "19. Location of Addl.CCBA fuse is in ______.", "options": {"A": "BA Box 2", "B": "BA Box 1", "C": "BA Box 4", "D": "Switch Panel"}, "answer": "B"}, {"q": "41. In a 3-phase locomotive, BPFA and LSFI are provided in ________ panel.", "options": {"A": "Panel D", "B": "Panel A", "C": "Panel B", "D": "Panel C"}, "answer": "D"}, {"q": "53. In a WAG-12B locomotive, the ______ switch is provided at LP right side to test signalling lamps.", "options": {"A": "TSAFL", "B": "Lamp test", "C": "Flasher", "D": "ZLS"}, "answer": "B"}, {"q": "45. In a 3-phase locomotive, the ______ type of SPM is provided.", "options": {"A": "Memotel", "B": "ESMON", "C": "Speed indicator", "D": "Special type"}, "answer": "A"}, {"q": "27. When the MPJ is kept on Forward/Reverse side, the ______ lamp extinguishes on LP's desk.", "options": {"A": "LSOL", "B": "LSDJ", "C": "LSCHBA", "D": "LSB"}, "answer": "D"}, {"q": "11. Location of A-8 COC in WAP-4 loco without pneumatic panel is ______.", "options": {"A": "Pn.Panel", "B": "Cab-1", "C": "Cab-2 below A9", "D": "MC-2"}, "answer": "C"}]}, {"label": "AIM 7", "type": "aim", "questions": [{"q": "63. In a conventional locomotive, Feed Pipe is charged with ______ reservoir pressure.", "options": {"A": "MR1", "B": "MR 2", "C": "MR3", "D": "MR4"}, "answer": "B"}, {"q": "117. In a WAG-12B locomotive, each section consists of ______ nos. of E-Blocks.", "options": {"A": "2", "B": "4", "C": "1", "D": "3"}, "answer": "A"}, {"q": "109. Horse Power of WAG-12B Locomotive is ______.", "options": {"A": "5400", "B": "6000", "C": "9000", "D": "12000"}, "answer": "D"}, {"q": "100. In a WAG-9 locomotive, in proportional working, maximum brake cylinder pressure is ______ kg/cm2.", "options": {"A": "1.8", "B": "2", "C": "2.5", "D": "3.8"}, "answer": "C"}, {"q": "61. In a WAG-7 locomotive, location of SIV is ______.", "options": {"A": "HT1", "B": "Motor Chest 1", "C": "Motor Chest 2", "D": "HT 2"}, "answer": "C"}, {"q": "88. In a 3-phase locomotive, (E-70 brake system), for charging of BP pressure ______ coc to be kept open.", "options": {"A": "74", "B": "70", "C": "136", "D": "47"}, "answer": "B"}, {"q": "82. In a WAG-7 locomotive, location of HQOP-1 is ______.", "options": {"A": "HT3, BA2", "B": "HT1, BA1", "C": "HT3, BA3", "D": "MC-1"}, "answer": "B"}, {"q": "84. Maximum Tractive Effort of WAG-9H locomotive is ______ KN .", "options": {"A": "514", "B": "706", "C": "780", "D": "520"}, "answer": "D"}, {"q": "108. In a WAG-12B locomotive, the total number of TMs provided in one section is ______.", "options": {"A": "6", "B": "4", "C": "8", "D": "12"}, "answer": "B"}, {"q": "102. Maximum permissible speed of a WAP 5 locomotive is ______ KMPH.", "options": {"A": "100", "B": "120", "C": "130", "D": "160"}, "answer": "D"}, {"q": "66. In a WAP-4 locomotives, ______ number of brake cylinders are provided.", "options": {"A": "4", "B": "6", "C": "8", "D": "12"}, "answer": "D"}, {"q": "116. In a WAG-12B locomotive, ______ no. of lamps are provided in indication panel.", "options": {"A": "10", "B": "9", "C": "8", "D": "7"}, "answer": "D"}, {"q": "69. In a WAP-4 locomotive, ______ type of bogie is provided.", "options": {"A": "CO-CO Trimount", "B": "CO-CO Tetra high adhesion", "C": "CO-CO flexi coil bogie", "D": "CO-CO Special design"}, "answer": "C"}, {"q": "118. In a WAG-12B locomotive, location of MCPA is ______.", "options": {"A": "BCM", "B": "PCU", "C": "Side of BCM", "D": "MASU"}, "answer": "D"}, {"q": "110. In a WAG-12B locomotive, regenerative braking can be used above ______ KMPH.", "options": {"A": "0.5", "B": "5", "C": "3", "D": "10"}, "answer": "D"}, {"q": "94. In a 3-phase locomotive, positions of 154 switch are ______.", "options": {"A": "I", "B": "II", "C": "I-II", "D": "NORM, I,II,I+II"}, "answer": "D"}, {"q": "58. In a conventional locomotive, transformer oil is circulated by ______ auxiliary motor.", "options": {"A": "MVRH", "B": "MPH", "C": "MVSI", "D": "MVSL"}, "answer": "B"}, {"q": "104. In a WAG-12B locomotive, Max. Braking Effort with 22.5T axle load is ______ KN.", "options": {"A": "514", "B": "706", "C": "780", "D": "520"}, "answer": "A"}, {"q": "91. In a 3-phase locomotive, Auxiliary Converter No. 1 feeds the ______ and ______ motors.", "options": {"A": "TMB1, TMB2", "B": "TFP1 & TFP 2", "C": "OCB1, OCB2", "D": "MCP1 & MCP 2"}, "answer": "C"}, {"q": "96. In a 3-phase locomotive, to switch on flasher light, the ______ switch is to be operated.", "options": {"A": "ZTEL", "B": "CCFL", "C": "BPFL", "D": "BPPB"}, "answer": "C"}, {"q": "113. In a WAG-12B locomotive, to operate HOM, ______ key to be used.", "options": {"A": "PATRA", "B": "Blue KABA", "C": "IG-38", "D": "ZPT"}, "answer": "B"}, {"q": "107. In a WAG-12B locomotive, de-humidifier works with ______ supply.", "options": {"A": "110 V, DC", "B": "110 V, AC", "C": "220 V, DC", "D": "230 V, AC"}, "answer": "A"}, {"q": "71. In a WAP-4 locomotive, when the hand brake is applied, the brake(s) of ______ wheel(s) are applied.", "options": {"A": "No-2 both sides, No-4 one side", "B": "No-2 both sides only", "C": "No-1 both sides, No-3 one side", "D": "None"}, "answer": "B"}, {"q": "74. In a conventional locomotive, J2 controls the direction of current to motor fields of ______ TMs.", "options": {"A": "4", "B": "5", "C": "4,5,6", "D": "6"}, "answer": "C"}, {"q": "99. In a 3-phase locomotive, normal position of panto selector switch is ______.", "options": {"A": "Auto", "B": "1", "C": "2", "D": "ALL"}, "answer": "A"}, {"q": "57. In a conventional locomotive, transformer oil should be above ______ Degree", "options": {"A": "10", "B": "20", "C": "+15", "D": "-15"}, "answer": "C"}, {"q": "95. In a 3-phase locomotive, positions of panto selector switch are ______.", "options": {"A": "Auto", "B": "1", "C": "2", "D": "ALL"}, "answer": "D"}, {"q": "55. In a conventional locomotive, to close DJ, ______ push button switch to be operated", "options": {"A": "BP1DJ", "B": "BP2DJ", "C": "BLDJ", "D": "BPSW"}, "answer": "B"}, {"q": "70. In a WAG-7 locomotive, when the hand brake is applied, the brakes of the ______ and ______ wheels are applied.", "options": {"A": "No-2 both sides, No-4 one side", "B": "No-2 both sides only", "C": "No-1 both sides, No-3 one side", "D": "None"}, "answer": "A"}, {"q": "105. In a WAG-12B locomotive, if PB is applied along with SA9 maximum, PB gauge shows ______ kg/cm2 .", "options": {"A": "1.8", "B": "2", "C": "2.5", "D": "3.8"}, "answer": "D"}, {"q": "77. In a conventional locomotive, earth fault protection relay for TPC-2 is ______.", "options": {"A": "QLA", "B": "QOA", "C": "QRSI", "D": "QOP 2"}, "answer": "D"}, {"q": "65. In a WAG-5/WAG-7 locomotive, ______ number of brake cylinders are provided.", "options": {"A": "4", "B": "6", "C": "8", "D": "12"}, "answer": "C"}, {"q": "60. In a conventional locomotive, in ARNO provided locomotives, earth fault protection relay for auxiliary power circuit equipment is ______.", "options": {"A": "QLA", "B": "QOA", "C": "QRSI", "D": "QOP"}, "answer": "B"}, {"q": "56. In a conventional locomotive, QLM is provided in ______ power circuit.", "options": {"A": "TPC 1", "B": "TPC 2", "C": "Feeding", "D": "Aux.Power Ckt"}, "answer": "C"}, {"q": "72. In a conventional locomotive, CGR 1,2, 3 are having ______ type of contactors.", "options": {"A": "EM", "B": "EP", "C": "Line", "D": "Cam"}, "answer": "D"}, {"q": "93. In a 3-phase locomotive, hotel load facility is available in ______ loco(s).", "options": {"A": "WAP5", "B": "WAP7", "C": "All WAP-5 and modified WAP-7", "D": "WAP4"}, "answer": "C"}, {"q": "86. To perform shunting with a 3-phase locomotive, keep the ______ switch in the ______ position.", "options": {"A": "160, 0", "B": "152,0", "C": "160, 1", "D": "154,1"}, "answer": "A"}, {"q": "75. In a conventional locomotive, Q20 relay energizes at ______ volts.", "options": {"A": "700", "B": "750", "C": "790", "D": "820"}, "answer": "C"}, {"q": "111. In a WAG-12B locomotive, to overcome 3 Kmph trouble, the ______ switch is to be operated", "options": {"A": "TBC Bypass", "B": "VCD Isolation", "C": "FE bypass", "D": "Zero speed bypass"}, "answer": "D"}, {"q": "87. In a 3-phase locomotive, the battery charger gets supply from ______.", "options": {"A": "Aux. Converter 1", "B": "Aux. Converter 2", "C": "Aux. Converter 3", "D": "Independent"}, "answer": "C"}, {"q": "83. Maximum speed of a WAG-9 locomotive is ______ KMPH.", "options": {"A": "90", "B": "95", "C": "100", "D": "105"}, "answer": "C"}, {"q": "78. In a conventional locomotive, over current protection relay for TPC-1 is ______.", "options": {"A": "QLA", "B": "QOA", "C": "QRSI 1", "D": "QOP 2"}, "answer": "C"}, {"q": "73. In a conventional locomotive, J1 controls the direction of current to motor fields of ______ TMs.", "options": {"A": "1", "B": "2", "C": "1,2,3", "D": "3"}, "answer": "C"}, {"q": "81. In a conventional locomotive, QD-2 is connected between ______ & ______ TMs.", "options": {"A": "2 & 3", "B": "1 & 3", "C": "2 & 4", "D": "4 & 5"}, "answer": "D"}, {"q": "89. In a 3-phase locomotive, the battery charger output MCB No. is ______ and is located in ______.", "options": {"A": "110, SB1", "B": "100, HB1", "C": "110, SB2", "D": "100 SB 2"}, "answer": "C"}, {"q": "64. In a conventional locomotive, BP pipe is charged with ______ reservoir pressure.", "options": {"A": "MR1", "B": "MR 2", "C": "MR3", "D": "MR4"}, "answer": "C"}, {"q": "76. In a conventional locomotive, earth fault protection relay for TPC-1 is ______.", "options": {"A": "QLA", "B": "QOA", "C": "QRSI", "D": "QOP 1"}, "answer": "D"}, {"q": "67. In a WAG-5 locomotive, ______ type of bogie is provided.", "options": {"A": "CO-CO Trimount", "B": "CO-CO Tetra high adhesion", "C": "CO-CO flexi coil bogie", "D": "CO-CO Special design"}, "answer": "A"}, {"q": "79. In a conventional locomotive , over current protection relay for TPC-2 is ______.", "options": {"A": "QLA", "B": "QOA", "C": "QRSI 2", "D": "QOP 2"}, "answer": "C"}, {"q": "115. In a WAG-12B locomotive, the panto isolation cock is located at ______.", "options": {"A": "BCM", "B": "PCU", "C": "Side of BCM", "D": "MASU"}, "answer": "B"}, {"q": "85. A three-phase locomotive has ______ no. of traction converters and ______ no. of auxiliary converters.", "options": {"A": "3, 3", "B": "2,1", "C": "2, 3", "D": "2,2"}, "answer": "C"}, {"q": "90. During locomotive brake testing of WAG-9 or WAP-7, locomotive should not move up to ______.", "options": {"A": "100 KN", "B": "125 Kn", "C": "150 KN", "D": "180 Kn"}, "answer": "C"}, {"q": "62. In a WAG-7 locomotive, location of MVSL-1 is ______.", "options": {"A": "HT1", "B": "MC 1", "C": "MC 2", "D": "HT 2"}, "answer": "A"}, {"q": "59. In a conventional locomotive, starting phase of ARNO is suppressed by ______ relay.", "options": {"A": "QCVAR", "B": "QVSI", "C": "QVSL", "D": "QCON"}, "answer": "A"}, {"q": "101. In a 3-phase locomotive, the battery charger input MCB No. is ______ and located in ______.", "options": {"A": "110, SB1", "B": "100, HB2/BUR 2", "C": "110, SB2", "D": "100 SB 2"}, "answer": "B"}, {"q": "92. In a 3-phase locomotive, parking brakes are applied and released through ______ switch in Panel 'A'.", "options": {"A": "SV 30", "B": "BPPB", "C": "BPCS", "D": "BPVR"}, "answer": "B"}, {"q": "114. In a WAG-12B locomotive, if throttle is not responding, operate the ______ switch.", "options": {"A": "TBC Bypass", "B": "VCD Isolation", "C": "FE bypass", "D": "Zero speed bypass"}, "answer": "A"}, {"q": "103. In a WAG-12B locomotive, Max. Tractive Effort with 22.5T axle load is ______ KN .", "options": {"A": "514", "B": "706", "C": "780", "D": "520"}, "answer": "B"}, {"q": "97. In a 3-phase locomotive with Knorr Brakes, the Mode Switch in the trailing cab is kept in the ______ position.", "options": {"A": "TRAIL", "B": "LEAD", "C": "TEST", "D": "HLPR"}, "answer": "A"}, {"q": "112. In a WAG-12B locomotive, ______ no. of 3-phase auxiliary motors are provided in each section.", "options": {"A": "13", "B": "12", "C": "10", "D": "9"}, "answer": "A"}, {"q": "106. In a WAG-12B locomotive, panto selector switch positions are ______.", "options": {"A": "Rear", "B": "Front", "C": "Both", "D": "All the above"}, "answer": "D"}, {"q": "98. In a 3-phase locomotive, TMB-1 cools ______ TMs.", "options": {"A": "1", "B": "2", "C": "3", "D": "All"}, "answer": "D"}, {"q": "68. In a WAG-7 locomotive, ______ type of bogie is provided.", "options": {"A": "CO-CO Trimount", "B": "CO-CO Tetra high adhesion", "C": "CO-CO flexi coil bogie", "D": "CO-CO Special design"}, "answer": "B"}, {"q": "80. In a conventional locomotive, QD-1 is connected between ______ & ______ TMs.", "options": {"A": "2 & 3", "B": "1 & 3", "C": "2 & 4", "D": "4 & 5"}, "answer": "A"}]}, {"label": "AIM 8", "type": "aim", "questions": [{"q": "123. In a 3-phase locomotive, raise the pantograph after ensuring ______ node number.", "options": {"A": "FLG 504", "B": "FLG 550", "C": "FLG 570", "D": "FLG 590"}, "answer": "A"}, {"q": "157. During Long Haul operation, if a conventional locomotive is attached in the middle, the MU2B valve shall be kept in the ______ position.", "options": {"A": "TEST", "B": "LEAD", "C": "TRAIL", "D": "HLPR"}, "answer": "B"}, {"q": "131. In a 3-phase locomotive, CCB2.0 brake system, position of MODE switch in trailing cab is ______.", "options": {"A": "TRAIL", "B": "LEAD", "C": "HLPR", "D": "TEST"}, "answer": "A"}, {"q": "160. In all types of locomotives, VCD to be acknowledged once in every ______ seconds", "options": {"A": "45", "B": "55", "C": "70", "D": "60"}, "answer": "D"}, {"q": "130. In a 3-phase locomotive, CCB2.0 brake system, position of A9 handle in trailing cab is ______.", "options": {"A": "RUN", "B": "FS", "C": "FS & Lock", "D": "Emergency"}, "answer": "C"}, {"q": "137. In a conventional locomotive, a minimum pneumatic pressure of ______ is required for energization.", "options": {"A": "Above 6 kg/cm2", "B": "Above 7kg/cm2", "C": "Above 6.5 kg/cm2", "D": "Above 8 kg/cm2"}, "answer": "C"}, {"q": "155. In a WAG-12B locomotive, grounding can be done by using ______ key.", "options": {"A": "MASCON", "B": "KABA", "C": "PATRA", "D": "ZSEC"}, "answer": "B"}, {"q": "149. While energizing WAG-12B locomotive, switch ON ______ MCB in both sections in LP side battery box.", "options": {"A": "100", "B": "112", "C": "110", "D": "112.1"}, "answer": "A"}, {"q": "158. During PUSH PULL operation of WAP-5 locomotives, slave loco position of 136 cock is ______.", "options": {"A": "Open", "B": "Close", "C": "45 degrees", "D": "135 degrees"}, "answer": "B"}, {"q": "154. During en-route short stoppages, the temperature of ______ in the undergear should be checked in all types of locomotives.", "options": {"A": "TM", "B": "CBC", "C": "AXLE BOX", "D": "None of the above"}, "answer": "C"}, {"q": "146. In a WAG-7 locomotive, while conducting loco brake power test, the locomotive should not move at ______ amperes.", "options": {"A": "500", "B": "600", "C": "700", "D": "800"}, "answer": "B"}, {"q": "135. In a 3-phase locomotive, Traction Bogie isolation switch is ______.", "options": {"A": "152", "B": "160", "C": "237.1", "D": "154"}, "answer": "D"}, {"q": "125. In a 3-phase locomotive, operate reverser after ensuring ______ node number.", "options": {"A": "FLG 504", "B": "FLG 550", "C": "FLG 570", "D": "FLG 590"}, "answer": "C"}, {"q": "144. In a conventional MU locomotive, the position of A8 COC in trailing locomotive is", "options": {"A": "TRAIL", "B": "OPEN", "C": "LEAD", "D": "CLOSE"}, "answer": "D"}, {"q": "122. In a 3-phase locomotive, min. voltage required to energise is ______.", "options": {"A": "90 Volts", "B": "Above 90 volts", "C": "Below 90 volts", "D": "Above 92 volts"}, "answer": "D"}, {"q": "142. In a conventional MU locomotive, the position of MU2B in trailing locomotive is ______.", "options": {"A": "TRAIL", "B": "DEAD", "C": "LEAD", "D": "None of the above"}, "answer": "A"}, {"q": "138. In a conventional locomotive, when ZPT handle operated to '1' position, ______ pantograph will raise.", "options": {"A": "BOTH", "B": "REAR", "C": "NONE", "D": "FRONT"}, "answer": "B"}, {"q": "139. In a conventional locomotive, when ZPT handle operated to '2' position, ______ pantograph will raise.", "options": {"A": "BOTH", "B": "REAR", "C": "NONE", "D": "FRONT"}, "answer": "D"}, {"q": "127. In a 3-phase locomotive, grounding can be done by using ______ key.", "options": {"A": "BL", "B": "IG 38", "C": "ZPT", "D": "MPJ"}, "answer": "B"}, {"q": "140. In a conventional locomotive, grounding can be done by using ______ key.", "options": {"A": "BL", "B": "MPJ", "C": "ZPT", "D": "KABA"}, "answer": "C"}, {"q": "128. In a 3-phase MU locomotive, position of 136 COC in leading locomotive is ______.", "options": {"A": "TRAIL", "B": "OPEN", "C": "LEAD", "D": "CLOSE"}, "answer": "B"}, {"q": "120. In a 3-phase locomotive, before energizing, ensure ______ key is ON in pneumatic panel.", "options": {"A": "IG-38", "B": "Z BAN", "C": "BL", "D": "ZPT"}, "answer": "A"}, {"q": "153. In a WAG-12B locomotive, while conducting loco brake power test, locomotive shall not move up to ______ KN.", "options": {"A": "125", "B": "135", "C": "150", "D": "157"}, "answer": "D"}, {"q": "132. In a 3-phase locomotive, CCB2.0 brake system, position of MODE switch in leading cab is ______.", "options": {"A": "TRAIL", "B": "LEAD", "C": "HLPR", "D": "TEST"}, "answer": "B"}, {"q": "133. In a 3-phase locomotive, the train speed during PTDC mode shall not exceed______ KMPH.", "options": {"A": "10", "B": "25", "C": "20", "D": "30"}, "answer": "A"}, {"q": "161. In CCB2 brake system provided locomotives, to reset VCD penalty, wait for ______ seconds after keeping Throttle/TBC handle on neutral position.", "options": {"A": "32", "B": "160", "C": "45", "D": "55"}, "answer": "A"}, {"q": "136. In a conventional locomotive, a minimum voltage of ______ is required for energization.", "options": {"A": "90 Volts", "B": "Above 90 volts", "C": "Below 90 volts", "D": "Above 92 volts"}, "answer": "B"}, {"q": "124. In a 3-phase locomotive, close VCB after ensuring ______ node number.", "options": {"A": "FLG 504", "B": "FLG 550", "C": "FLG 570", "D": "FLG 590"}, "answer": "B"}, {"q": "126. In a 3-phase locomotive, operate reverser after ensuring the MR pressure is above ______ kg/cm2.", "options": {"A": "5", "B": "5.2", "C": "5.5", "D": "6.4"}, "answer": "D"}, {"q": "147. In a conventional locomotive, to reset the VCD penalty, wait for ______ seconds after keeping MP on Zero.", "options": {"A": "32", "B": "160", "C": "45", "D": "55"}, "answer": "A"}, {"q": "148. In a WAG-12B locomotive, ______ minimum BA voltage is required.", "options": {"A": "90 Volts", "B": "Above 90 volts", "C": "Below 90 volts", "D": "Above 92 volts"}, "answer": "D"}, {"q": "159. During PUSH PULL operation of WAP-7 locomotive, while negotiating neutral section, the ______ switch shall be in ON position.", "options": {"A": "ZTEL", "B": "ZNN", "C": "ZPT", "D": "ZBAN"}, "answer": "B"}, {"q": "143. In a conventional MU locomotive, the position of A8 COC in leading locomotive is", "options": {"A": "TRAIL", "B": "OPEN", "C": "LEAD", "D": "CLOSE"}, "answer": "B"}, {"q": "151. While energizing WAG-12B locomotive, after getting 'NO ACTIVE CAB' message on display, ______ key to be operated.", "options": {"A": "MASCON", "B": "KABA", "C": "PATRA", "D": "ZPT"}, "answer": "A"}, {"q": "150. In a WAG-12B locomotive, panto toggle switch is having ______ no. of positions.", "options": {"A": "1", "B": "2", "C": "3", "D": "4"}, "answer": "D"}, {"q": "141. In a conventional MU locomotive, the position of MU2B in leading locomotive is ______.", "options": {"A": "LEAD", "B": "TRAIL", "C": "DEAD", "D": "None of the above"}, "answer": "A"}, {"q": "119. In a conventional locomotive, if the flasher light is not glowing, check the ______ fuse.", "options": {"A": "CCAFL", "B": "CCLF", "C": "CCLC", "D": "CCFL"}, "answer": "D"}, {"q": "156. During long haul operation if conventional Locomotive is in the middle, A 8 COC position is ________.", "options": {"A": "OPEN", "B": "CLOSE", "C": "SOME TIMES OPEN", "D": "None of the above"}, "answer": "B"}, {"q": "162. While making EOT with H-type CBC coupling, the speed of the locomotive is ______ KMPH.", "options": {"A": "2-2.5", "B": "2 to 3", "C": "3 to 5", "D": "0.5 to 0.8"}, "answer": "B"}, {"q": "145. In a conventional locomotive, to isolate VCD, the ______ switch is to be operated.", "options": {"A": "ZVCD", "B": "HVCD", "C": "PVCD", "D": "None of the above"}, "answer": "B"}, {"q": "134. In a 3-phase locomotive, VCD isolation switch is ______.", "options": {"A": "152", "B": "160", "C": "237.1", "D": "154"}, "answer": "C"}, {"q": "152. WAG-12B locomotive can be shut down by operating SBAC or by using ______.", "options": {"A": "MASCON", "B": "KABA", "C": "PATRA", "D": "DDU"}, "answer": "D"}, {"q": "121. In a 3-phase locomotive, while energizing, switch ON ______ & ______ MCB's in SB-2 panel.", "options": {"A": "110,112.1", "B": "1,12,110", "C": "1,12,122.10", "D": "126"}, "answer": "A"}, {"q": "129. In a 3-phase MU locomotive, position of 136 COC in trailing locomotive is ______.", "options": {"A": "TRAIL", "B": "OPEN", "C": "LEAD", "D": "CLOSE"}, "answer": "D"}]}, {"label": "AIM 9-11", "type": "aim", "questions": [{"q": "174. In a bogie-mounted brake cylinder coach, ______ no. of brake cylinders are provided.", "options": {"A": "1", "B": "2", "C": "3", "D": "4"}, "answer": "D"}, {"q": "202. The maximum designed speed of the Vande Bharat train is ______ KMPH.", "options": {"A": "110", "B": "120", "C": "130", "D": "160"}, "answer": "D"}, {"q": "196. In a 3-phase locomotive, CCB-2.0 Knorr brake system provided locomotives, during BP continuity test ______ to be kept on TEST before dropping of BP pressure by TMR.", "options": {"A": "47", "B": "Mode switch", "C": "70", "D": "74"}, "answer": "B"}, {"q": "169. In a twin-pipe air brake system provided on wagons/coaches, the auxiliary reservoir is charged with ______ pressure.", "options": {"A": "BP", "B": "FP", "C": "MR", "D": "BP or FP"}, "answer": "B"}, {"q": "192. When any Air Spring is damaged or isolated in LHB coaches, ______ kmph speed to be followed.", "options": {"A": "55", "B": "60", "C": "65", "D": "70"}, "answer": "B"}, {"q": "207. In PUSH-PULL train operation, while changing cab, ______ locomotive's CE to be switched OFF.", "options": {"A": "Master", "B": "Slave", "C": "Both", "D": "Not required"}, "answer": "C"}, {"q": "170. In a single pipe air brake system, ______ hose pipe is connected between the wagons/coaches.", "options": {"A": "BP", "B": "FP", "C": "MR", "D": "BP or FP"}, "answer": "A"}, {"q": "214. In the event of a locomotive failure, crew issue, or any abnormality, information shall be given to ______.", "options": {"A": "ADEE", "B": "Sr.DEE", "C": "TPC", "D": "TLC"}, "answer": "D"}, {"q": "191. When FIBA acts in any coach due to air spring puncture, ______ pressure will drop.", "options": {"A": "FP", "B": "BP", "C": "MR", "D": "All"}, "answer": "B"}, {"q": "189. While working LHB coaching trains, ACP can be reset with ______ key.", "options": {"A": "Reverser", "B": "BL", "C": "MASCON", "D": "Universal"}, "answer": "D"}, {"q": "173. In a bogie-mounted brake system wagon, ______ no. of brake cylinders are provided.", "options": {"A": "1", "B": "2", "C": "3", "D": "4"}, "answer": "B"}, {"q": "209. The nominal OHE voltage available in OHE wire is ______.", "options": {"A": "17.5 KV", "B": "22.5 KV", "C": "25 KV", "D": "27.5 KV"}, "answer": "C"}, {"q": "204. In Vande Bharat trainset, ______ coaches are having parking brakes.", "options": {"A": "DTC", "B": "MC", "C": "TC", "D": "All"}, "answer": "D"}, {"q": "165. In Indian Railways, ______ type of wagons are utilized for the transportation of petroleum products.", "options": {"A": "BCN", "B": "BOB N", "C": "BOX N", "D": "BTPN"}, "answer": "D"}, {"q": "206. In PUSH-PULL train operation, while entering into neutral section, ______ switch is to be operated.", "options": {"A": "BLDJ", "B": "ZNN", "C": "ENS", "D": "BLHO"}, "answer": "B"}, {"q": "177. In locomotive BP pipe pressure is _____________kg/cm2 and FP pipe pressure is ________ kg/cm2.", "options": {"A": "5,6", "B": "5,5", "C": "6,5", "D": "6,6"}, "answer": "A"}, {"q": "203. In a Vande Bharat trainset, ______% of the coaches are equipped with traction motors.", "options": {"A": "50", "B": "60", "C": "75", "D": "100"}, "answer": "A"}, {"q": "168. In a single-pipe air brake system provided on wagons/coaches, the auxiliary reservoir is charged with ______ pressure.", "options": {"A": "BP", "B": "FP", "C": "MR", "D": "BP or FP"}, "answer": "A"}, {"q": "195. In 3-phase locomotive, E-70 brake system provided locomotives, during BP continuity test _________ coc to be closed before dropping of BP pressure by TMR.", "options": {"A": "47", "B": "136", "C": "70", "D": "74"}, "answer": "C"}, {"q": "188. While working a train, if an ACP occurs, the prescribed whistle code is ______.", "options": {"A": "2 short, 1 long", "B": "1 short, 1 long", "C": "2 short, 2 long", "D": "2 long, 1 short"}, "answer": "A"}, {"q": "166. Nomenclature for 4 wheeler brake van (BV) is ______.", "options": {"A": "BCN", "B": "BVZC", "C": "BOX N", "D": "BTPN"}, "answer": "B"}, {"q": "185. While issuing End to End type of BPC ______% of brake power is required.", "options": {"A": "80", "B": "85", "C": "90", "D": "95"}, "answer": "C"}, {"q": "212. ______ device is provided on both side of OHE to maintain tension in OHE.", "options": {"A": "ATD", "B": "APD", "C": "Mast", "D": "SI"}, "answer": "A"}, {"q": "167. Nomenclature for 8 wheeler brake van (BV) is ______.", "options": {"A": "BCN", "B": "BVZC", "C": "BVZI", "D": "BTPN"}, "answer": "C"}, {"q": "199. In a 3- Phase MEMU, driving coach is called as ______.", "options": {"A": "Trailer Coach", "B": "Motor coach", "C": "DMC", "D": "DTC"}, "answer": "C"}, {"q": "175. In a bogie-mounted brake system wagon, in place of Load/Empty handle, ______ is provided.", "options": {"A": "APM", "B": "AMP", "C": "DV", "D": "None of the above"}, "answer": "A"}, {"q": "184. For coaching trains, the percentage of Brake Power is ______.", "options": {"A": "90", "B": "95", "C": "98", "D": "100"}, "answer": "D"}, {"q": "198. In a conventional EMU and MEMU, ______ & ______ brake systems are provided", "options": {"A": "EP only", "B": "Auto only", "C": "EP & Auto", "D": "None of above"}, "answer": "C"}, {"q": "176. The colour of the BP pipe is ______, and the colour of the FP pipe is ______.", "options": {"A": "Green, Yellow", "B": "Green, White", "C": "Green,Red", "D": "Green, Green"}, "answer": "B"}, {"q": "181. The maximum brake cylinder (BC) pressure in a wagon/coach during the Full Service or Emergency brake application is ______ kg/cm².", "options": {"A": "2.5", "B": "3", "C": "3.5", "D": "3.8"}, "answer": "D"}, {"q": "210. Normal height of contact wire is ______ meters.", "options": {"A": "5", "B": "5.55", "C": "5.6", "D": "6"}, "answer": "B"}, {"q": "178. To release the brakes manually on a wagon, the ______ connected to the Distributor Valve (DV) shall be pulled.", "options": {"A": "Service handle", "B": "AR", "C": "QRV", "D": "COC"}, "answer": "C"}, {"q": "183. In BMBS provided wagons, during Empty condition, APM sends maximum pressure in BC is ______ kg/cm2.", "options": {"A": "2.2", "B": "3", "C": "3.5", "D": "3.8"}, "answer": "A"}, {"q": "179. The BP pressure in the locomotive is ______ kg/cm², and in the BV/LV of a train with up to 58 wagons, it is ______ kg/cm².", "options": {"A": "5; 4.8", "B": "6; 4.8", "C": "5; 4.6", "D": "5; 4.7"}, "answer": "A"}, {"q": "164. In goods wagons, ______ is a open wagon.", "options": {"A": "BCN", "B": "BOB N", "C": "BOX N", "D": "BTPN"}, "answer": "C"}, {"q": "211. When ATDs are provided at both ends of an OHE section, the arrangement is known as __________.", "options": {"A": "Un-Regulated OHE", "B": "Regulated OHE", "C": "Semi Regulated", "D": "Overlap OHE Regulated"}, "answer": "B"}, {"q": "187. While issuing Closed Circuit (CC) type of BPC ______% of brake power is required.", "options": {"A": "100", "B": "85", "C": "90", "D": "95"}, "answer": "A"}, {"q": "163. In goods wagons, ______ is a covered wagon.", "options": {"A": "BCN", "B": "BOB N", "C": "BOX N", "D": "BTPN"}, "answer": "A"}, {"q": "205. In PUSH-PULL train operation, leading loco is called ______ and rear loco is called ______.", "options": {"A": "Master, Slave", "B": "Slave, Master", "C": "Master, Master", "D": "Slave, Slave"}, "answer": "A"}, {"q": "180. The BP pressure in the locomotive is ______ kg/cm² and in the BV/LV of a train more than 58 wagons is ______ kg/cm².", "options": {"A": "5; 4.8", "B": "6; 4.8", "C": "5; 4.6", "D": "5; 4.7"}, "answer": "D"}, {"q": "208. To work the train without guard, ______ permission is required.", "options": {"A": "Sr.DEE", "B": "Sr.DOM", "C": "Sr.DEN", "D": "All of the"}, "answer": "B"}, {"q": "197. In a conventional EMU and MEMU, driving coach is called as ______.", "options": {"A": "Trailer Coach", "B": "Motor coach", "C": "DMC", "D": "DTC"}, "answer": "B"}, {"q": "171. In a twin pipe air brake system ______ & ______ hose pipes are connected between the wagons/coaches.", "options": {"A": "BP", "B": "FP", "C": "MR", "D": "BP & FP"}, "answer": "D"}, {"q": "182. In BMBS provided wagons, during loaded condition, APM sends maximum pressure in BC is ______ kg/cm2.", "options": {"A": "2.5", "B": "3", "C": "3.5", "D": "3.8"}, "answer": "D"}, {"q": "193. Air/BP continuity test is to be done between ______.", "options": {"A": "LP & ALP", "B": "LP only", "C": "TMR only", "D": "TMR & LP"}, "answer": "D"}, {"q": "200. In a 3-Phase EMU, driving coach is called as ______.", "options": {"A": "Trailer Coach", "B": "Motor coach", "C": "DMC", "D": "DTC"}, "answer": "D"}, {"q": "194. In conventional locos, during BP continuity test, ______ coc to be closed before dropping of BP pressure by TMR.", "options": {"A": "A8", "B": "A12", "C": "RGEB", "D": "RGCP"}, "answer": "A"}, {"q": "190. When FIBA acted, FIBA indicator shows ______ colour.", "options": {"A": "Green", "B": "Red", "C": "Yellow", "D": "Pink"}, "answer": "B"}, {"q": "201. In a 3-phase EMU/MEMU/T-18, to negotiate neutral section the ______ switch is provided.", "options": {"A": "Cruise control", "B": "VCD Ack.", "C": "PSS", "D": "ENS PB"}, "answer": "D"}, {"q": "215. The maximum permissible wheel tread flat on a locomotive wheel is ______ mm.", "options": {"A": "30 mm", "B": "40 mm", "C": "60 mm", "D": "50 mm"}, "answer": "D"}, {"q": "172. In an underframe-mounted brake system wagon, ______ no. of brake cylinders are provided.", "options": {"A": "1", "B": "2", "C": "3", "D": "4"}, "answer": "A"}, {"q": "213. As per latest instructions, how many SIGMA boards are provided while approaching the stop signal ______.", "options": {"A": "1", "B": "2", "C": "3", "D": "4"}, "answer": "A"}, {"q": "186. While issuing PREMIUM type of BPC ______% of brake power is required.", "options": {"A": "80", "B": "85", "C": "90", "D": "95"}, "answer": "D"}]}, {"label": "AIM 12-14", "type": "aim", "questions": [{"q": "250. In a 3-phase locomotive, MCP is getting supply from ________.", "options": {"A": "AC 2", "B": "AC 3", "C": "AC 1", "D": "None"}, "answer": "B"}, {"q": "222. Whistle code for Train Parting is ________.", "options": {"A": "___ 0 0", "B": "___ ___ 0", "C": "___ 0 ___ 0", "D": "___ ___ 0 0"}, "answer": "C"}, {"q": "255. In a WAG-12B locomotive, the pantograph toggle switch positions are ________.", "options": {"A": "Raise & Lower", "B": "raise & Lower & None", "C": "Raise, None, Lower, Emergency", "D": "Rear, Front & both"}, "answer": "C"}, {"q": "246. In a 3-phase locomotive, Oil Cooling Blower is getting supply from ________.", "options": {"A": "AC 2", "B": "AC 3", "C": "AC 1", "D": "None"}, "answer": "C"}, {"q": "257. In a WAG-9 dead locomotive with CCB2.0, during proportional braking, maximum BC pressure is ________.", "options": {"A": "1.8 Kg/cm2", "B": "2.5 Kg/cm2", "C": "3.8 Kg/cm2", "D": "2.0 Kg/cm2"}, "answer": "C"}, {"q": "247. In a 3-phase locomotive, Traction Motor Blower is getting supply from ________.", "options": {"A": "AC 2", "B": "AC 3", "C": "AC 1", "D": "None"}, "answer": "A"}, {"q": "235. In a WAG-9 locomotive, if TE is not getting more than 300 KN, check the ________ switch.", "options": {"A": "ZTEL", "B": "ZBAN", "C": "Defective Throttle", "D": "BLHO"}, "answer": "A"}, {"q": "221. When a Fog Pass Device is provided in the locomotive, in Automatic Block Signalling (ABS) territory, after passing an Automatic Stop Signal displaying a Double Yellow aspect, the speed of the train shall not exceed ______ KMPH.", "options": {"A": "Restricted speed to stop at next stop signal", "B": "30 KMPH", "C": "40 KMPH", "D": "20 KMPH"}, "answer": "B"}, {"q": "237. In a 3-phase locomotive, battery charger is getting supply from ________.", "options": {"A": "AC 2", "B": "AC 3", "C": "AC 1", "D": "None"}, "answer": "B"}, {"q": "259. In a WAP-5 locomotive, ________ wheels are having Parking brake facility.", "options": {"A": "2,6,7,11", "B": "2,7", "C": "1,4,5,8", "D": "1 & 4"}, "answer": "C"}, {"q": "229. During GR manual operation for progression or regression, the GR shall be rotated manually within ______ seconds.", "options": {"A": "1", "B": "1.5", "C": "0.8", "D": "0.5"}, "answer": "D"}, {"q": "224. ________ type of fire extinguishers provided in a conventional loco.", "options": {"A": "CO2", "B": "Foam", "C": "water", "D": "DCP"}, "answer": "D"}, {"q": "238. In a 3-phase locomotive provided with E-70 brake system, for charging of BP pressure ________ coc to be kept open.", "options": {"A": "136", "B": "70", "C": "74", "D": "47"}, "answer": "B"}, {"q": "262. If the MPH is isolated, observe a starting current of ______ for the first 5 minutes and a continuous current of ______ for the traction motors (TMs).", "options": {"A": "750, 750", "B": "750, 500", "C": "920, 500", "D": "920, 750"}, "answer": "C"}, {"q": "244. In a WAP-5 locomotive, during loco brake power test, locomotive should not move up to ________ KN.", "options": {"A": "100", "B": "120", "C": "150", "D": "140"}, "answer": "A"}, {"q": "253. In a 3-phase locomotive, normal position of pantograph selector switch is ________.", "options": {"A": "1", "B": "2", "C": "3", "D": "Auto"}, "answer": "D"}, {"q": "226. During EEC operation, the MP shall be kept in the ________ position to close the ________ contactors.", "options": {"A": "N, Line", "B": "N, Cam", "C": "0, Line", "D": "N, EM"}, "answer": "A"}, {"q": "256. In a WAG-9 locomotive, during proportional braking, maximum BC pressure is", "options": {"A": "1.8 Kg/cm2", "B": "2.5 Kg/cm2", "C": "3.8 Kg/cm2", "D": "2.0 Kg/cm2"}, "answer": "B"}, {"q": "217. When a train stops in an automatic block signaling section on a double-line (BG) and is unable to proceed further, the Crew shall protect in rear of the train in same line duly placing detonators at a distance of ________.", "options": {"A": "90, 180, Mtrs", "B": "90, 180, 190 Mtrs", "C": "90, 190 Mtrs", "D": "90, Mtrs"}, "answer": "B"}, {"q": "242. In a conventional freight fit locomotive, during loco brake power test, locomotive should not move up to ________ KN.", "options": {"A": "800 Amp", "B": "400 Amp", "C": "500 amp", "D": "600 Amp"}, "answer": "D"}, {"q": "258. In a WAG-12 locomotive, during proportional braking, maximum BC pressure is", "options": {"A": "1.8 Kg/cm2", "B": "2.5 Kg/cm2", "C": "3.8 Kg/cm2", "D": "2.0 Kg/cm2"}, "answer": "C"}, {"q": "234. In a WAG-9 locomotive, parking brakes are provided to ________ wheels.", "options": {"A": "1,6,7&12", "B": "2,6,7&11", "C": "1,4,5 & 8", "D": "2,6, 8 &12"}, "answer": "B"}, {"q": "231. When the Q45 relay is in the wedged condition, operate only the ________ switch to close the VCB.", "options": {"A": "BP1DJ", "B": "BLDJ", "C": "BP2DJ", "D": "BLSN"}, "answer": "B"}, {"q": "233. Maximum speed of a WAG-9 loco is ________ KMPH.", "options": {"A": "105", "B": "110", "C": "100", "D": "120"}, "answer": "C"}, {"q": "249. In a 3-phase locomotive, TFP oil circulating pump is getting supply from ________.", "options": {"A": "AC 2", "B": "AC 3", "C": "AC 1", "D": "None"}, "answer": "A"}, {"q": "243. In a conventional coaching fit locomotive, during loco brake power test, locomotive should not move up to ________ KN.", "options": {"A": "800 Amp", "B": "400 Amp", "C": "500 amp", "D": "600 Amp"}, "answer": "A"}, {"q": "239. In a conventional locomotive, for charging of BP pressure ________ coc to be kept open.", "options": {"A": "A8", "B": "RBEB", "C": "RGCP", "D": "RGAF"}, "answer": "A"}, {"q": "225. ________ type of fire extinguishers provided in a 3 phase locomotive.", "options": {"A": "CO2", "B": "Foam", "C": "water", "D": "DCP"}, "answer": "A"}, {"q": "260. In a WAG-12B locomotive, for each section, ________ wheels are having parking brake facility.", "options": {"A": "2,6,7,11", "B": "2,7", "C": "1,4,5,8", "D": "1 & 4"}, "answer": "C"}, {"q": "265. If SR-1 pump not working, work the train with ________.", "options": {"A": "Trip 63.1/1 MCB", "B": "Isolate Bogie-1", "C": "50% sectional load", "D": "ALL"}, "answer": "D"}, {"q": "223. In the event of a fire accident in a passenger-carrying train, the first objective is to ________.", "options": {"A": "Protection", "B": "train securing", "C": "Giving information", "D": "Safety of passengers"}, "answer": "D"}, {"q": "264. If MVMT-1 not working, keep ________ switches on '0'.", "options": {"A": "HVMT-1", "B": "MVSI-1", "C": "HVSL-1", "D": "ALL"}, "answer": "D"}, {"q": "236. To perform shunting with 3-phase locomotive, keep ________ switch in ________ position.", "options": {"A": "152, 0", "B": "237.1, 0", "C": "154, I", "D": "160, 0"}, "answer": "D"}, {"q": "232. Voltage applied to Traction Motors (Phase to Phase) in WAG-9 loco is ________.", "options": {"A": "920 Max.", "B": "2180 Max.", "C": "750 Max.", "D": "1400 Max."}, "answer": "B"}, {"q": "230. During GR manual operation, the ALP shall frequently check the ______ equipment for any abnormality.", "options": {"A": "RPGR", "B": "SMGR pressure", "C": "CGR 1,2,3", "D": "RGR"}, "answer": "D"}, {"q": "267. In a 3-phase locomotive, if TFP pump-1 not working, work the train ________.", "options": {"A": "Trip 62.1/1", "B": "70% TE/BE", "C": "a & b", "D": "Normal working"}, "answer": "C"}, {"q": "252. In a 3-phase locomotive, on moving BL key from ‘D’ to ‘OFF’ position, ________ brakes will apply automatically.", "options": {"A": "Auto", "B": "Loco", "C": "Both", "D": "PB"}, "answer": "D"}, {"q": "241. In WAG-9/WAP-7 locomotives, during loco brake power test, locomotive should not move up to ________ KN.", "options": {"A": "100", "B": "120", "C": "150", "D": "140"}, "answer": "C"}, {"q": "220. When a Fog Pass Device is provided in the locomotive, in Automatic Block Signalling (ABS) territory, after passing an Automatic Stop Signal displaying a Green aspect, the speed of the train shall not exceed ______ KMPH.", "options": {"A": "65 Kmph", "B": "75 Kmph", "C": "70 Kmph", "D": "80 Kmph"}, "answer": "B"}, {"q": "245. In a WAG-12B locomotive, during loco brake power test, locomotive should not move up to ________ KN.", "options": {"A": "100", "B": "120", "C": "157", "D": "140"}, "answer": "C"}, {"q": "266. If OCB-2 not working, work the train with ________.", "options": {"A": "Trip 59.1/2 MCB", "B": "Isolate Bogie-2", "C": "50% sectional load", "D": "ALL"}, "answer": "D"}, {"q": "216. When a train stops in an Automatic Block Signalling section on a double-line (BG) and is unable to proceed further, the Loco Pilot (LP) shall protect the adjacent line in the front by placing detonators at a distance of ________.", "options": {"A": "600, 1000", "B": "1000, 1010", "C": "60,01,200", "D": "600, 1200, 1210 &1220 Mtrs"}, "answer": "D"}, {"q": "219. During dense fog, the maximum permissible speed of a train in an Automatic Block Signalling (ABS) section while passing a signal displaying a single yellow aspect is restricted to ______ KMPH.", "options": {"A": "Restricted speed to stop at next stop signal", "B": "75 Kmph", "C": "70 Kmph", "D": "80 Kmph"}, "answer": "A"}, {"q": "248. In a 3-phase locomotive, SR oil/water circulating pump is getting supply from ________.", "options": {"A": "AC 2", "B": "AC 3", "C": "AC 1", "D": "None"}, "answer": "A"}, {"q": "254. In a WAG-12B locomotive, normal position of pantograph selector switch is ________.", "options": {"A": "Auto", "B": "Rear", "C": "front", "D": "Both"}, "answer": "B"}, {"q": "218. During dense fog, fog safety device is working, maximum speed of a train in Absolute block system is restricted to___________", "options": {"A": "65 Kmph", "B": "75 Kmph", "C": "70 Kmph", "D": "80 Kmph"}, "answer": "B"}, {"q": "251. In a WAG-12B locomotive, auxiliaries are getting supply from E-Block of ________.", "options": {"A": "ALP side", "B": "LP side", "C": "AC 1", "D": "None"}, "answer": "B"}, {"q": "263. If the MVRH is isolated, observe a starting current of ______ for the first 5 minutes and a continuous current of ______ for the traction motors (TMs).", "options": {"A": "750, 750", "B": "750, 500", "C": "920, 500", "D": "920, 750"}, "answer": "C"}, {"q": "261. In a 3-phase locomotive, battery charger input MCB is ________ and is located in ________.", "options": {"A": "100, HB1", "B": "110, SB1", "C": "100, HB2/BUr2", "D": "110, HB2"}, "answer": "C"}, {"q": "228. During GR manual operation, ensure that the ________ relay is not in the wedged condition.", "options": {"A": "Q45", "B": "Q46", "C": "Q44", "D": "Q48"}, "answer": "C"}, {"q": "240. In a 3-phase locomotive, battery charger output MCB is ________ and is located at ________.", "options": {"A": "100, SB 2", "B": "110 SB2", "C": "110 SB 1", "D": "100 SB2"}, "answer": "B"}, {"q": "268. In a 3-phase locomotive, location of FDU is ________.", "options": {"A": "SB 1", "B": "SB 2", "C": "HB 1", "D": "HB 2"}, "answer": "B"}, {"q": "227. During GR manual operation, the maximum permissible speed shall be restricted to ______ KMPH.", "options": {"A": "20", "B": "30", "C": "15", "D": "40"}, "answer": "B"}]}], "fib": [{"label": "Blanks Set 01", "type": "fib", "questions": [{"q": "48. In a conventional locomotive, if Cab-1 ZPT key is kept on '2' position, ________ pantograph will raise.", "answer": "Pantograph-1 (front)", "alts": ["Pantograph-1", "Pantograph 1", "Panto 1", "Front pantograph", "Front panto", "Panto-1"]}, {"q": "43. In a conventional locomotive, purpose of MVSI is ________.", "answer": "To cool RSI block", "alts": []}, {"q": "57. Full form of LHB is ________.", "answer": "Linke Hofmann Busch", "alts": []}, {"q": "28. Outside station limits, if the distance between two trains is ________ metres or more, it shall not be treated as an averted collision.", "answer": "more than 400", "alts": ["400", "above 400", "400 metres", "400 meters"]}, {"q": "47. In a conventional locomotive, if Cab-1 ZPT key is kept on '1' position, ________ pantograph will raise.", "answer": "Pantograph-2 (rear)", "alts": ["Pantograph-2", "Pantograph 2", "Panto 2", "Rear pantograph", "Rear panto", "Panto-2"]}, {"q": "65. Full form of COIS is ________.", "answer": "Coaching Operations Information System", "alts": ["Coaching Operations Information"]}, {"q": "18. In a 3-phase locomotive, harmonic filter resistances are cooled by ________.", "answer": "Natural air", "alts": ["Natural"]}, {"q": "69. Full form of IGBT is ________.", "answer": "Insulated Gate Bipolar Transistor", "alts": ["Insulated Gate Bypolar Transistor"]}, {"q": "44. In a 3-phase locomotive, if ZBAN is switched ON in working cab, ________ will happen.", "answer": "BP pressure drops", "alts": ["BP drops", "BP pressure will drop", "BP will drop", "BP drop"]}, {"q": "22. The ZIG-ZAG arrangement of OHE wire is known as ________.", "answer": "Staggering", "alts": []}, {"q": "49. In a WAG-12B locomotive, the rear section panto toggle switch kept on 'Emergency', ________ will happen.", "answer": "No panto raises", "alts": ["No pantograph raises", "No panto raise", "No pantograph raise"]}, {"q": "23. On UP track, the OHE masts numbered as ________.", "answer": "Odd", "alts": []}, {"q": "38. In a conventional locomotive, purpose of MPH is ________.", "answer": "To circulate TFP oil", "alts": ["circulate transformer oil"]}, {"q": "36. In 3-phase locomotives, primary over current relay is ________.", "answer": "OCR 78", "alts": []}, {"q": "55. Full form of PEASD is ________.", "answer": "Passenger Emergency Alarm Signal Device", "alts": ["Passenger Emergency Alarm Signalling Device"]}, {"q": "33. When QRS is in wedged condition, if BP dropped to 0, keep ________ in '0' position immediately.", "answer": "MP", "alts": []}, {"q": "67. Full form of HRMS is ________.", "answer": "Human Resources Management System", "alts": ["Human Resources Management"]}, {"q": "14. In WAG-9 locomotives, ________ type of fire extinguishers are provided.", "answer": "CO2", "alts": ["Carbon Dioxide"]}, {"q": "9. To isolate pantograph-1 electrically, ________ to be disconnected from roof bars.", "answer": "HPT 1", "alts": []}, {"q": "31. An example of consequential accident is ________.", "answer": "Fire on train", "alts": ["Fire on a train", "Fire in train"]}]}, {"label": "Blanks Set 02", "type": "fib", "questions": [{"q": "37. In a conventional locomotive, battery charger is getting supply from ________.", "answer": "ARNO/SIV", "alts": ["ARNO or SIV", "SIV/ARNO", "SIV or ARNO"]}, {"q": "64. Full form of FOIS is ________.", "answer": "Freight Operations Information System", "alts": ["Freight Operations Information"]}, {"q": "54. Full form of VESDA is ________.", "answer": "Very Early Smoke Detection Apparatus", "alts": ["Very Early Smoke Detection"]}, {"q": "56. Full form of FIBA is ________.", "answer": "Failure Indication and Brake Application", "alts": ["Fault Indication and Brake Application", "Fault Indication and Brake", "Failure Indication and Brake"]}, {"q": "32. When Q50 relay is in wedged condition, if DJ trips, keep ________ in '0' to bring GR to 0", "answer": "MP", "alts": ["MP handle"]}, {"q": "8. ________ equipment collects OHE supply to locomotive.", "answer": "Pantograph", "alts": ["Panto"]}, {"q": "17. In a 3-phase locomotive, potential transformer is connected to ________ roof bar.", "answer": "Middle", "alts": []}, {"q": "59. Full form of TCAS is ________.", "answer": "Train Collision Avoidance System", "alts": []}, {"q": "27. Derailments comes under ________ type of accidents", "answer": "Class 'D'", "alts": ["D", "Class D"]}, {"q": "19. In a WAG-12B locomotive, location of MCP is ________.", "answer": "MASU", "alts": []}, {"q": "15. In a 3-phase locomotive, illumination of the BPFA indication alone during run indicates a ________", "answer": "P2", "alts": []}, {"q": "21. In conventional EMU/MEMU, to take traction, ________ is provided.", "answer": "DMH/MPT", "alts": ["MPT/DMH"]}, {"q": "30. ________ shall not be used for extinguishing fires on electrical equipment.", "answer": "Water", "alts": []}, {"q": "2. The primary responsibility of an ALP is to assist the ________ in the operation of the locomotive and train.", "answer": "Loco Pilot", "alts": ["LP"]}, {"q": "16. In a 3-phase locomotive, UBA meter needle deviates when BL key is in ________ mode of BL key.", "answer": "D or C", "alts": ["C or D", "D and C", "C and D", "D/C", "C/D"]}, {"q": "13. In WAG-9 locomotives, if TE is not getting more than 300 KN, check ________.", "answer": "ZTEL", "alts": []}, {"q": "50. When water overflows above the rails, ________.", "answer": "Train must stop and be piloted by the PWI.", "alts": ["stop and be piloted by PWI", "Train must stop and be piloted by PWI"]}, {"q": "4. Station Masters are responsible for coordinating the arrival and departure of trains at their ________.", "answer": "Station", "alts": ["Stations"]}, {"q": "5. ________ monitors and records all activities and events in the signalling system of a railway station.", "answer": "Data logger", "alts": ["Datalogger"]}, {"q": "34. In 3-phase locomotive, ________ type of batteries are used.", "answer": "Ni-Cd", "alts": ["Nickel Cadmium"]}]}, {"label": "Blanks Set 03", "type": "fib", "questions": [{"q": "1. While stopping a coaching train at a block or non-block station in obedience to a STOP signal, the ALP shall ensure that the train does not overshoot the ________.", "answer": "Stop Board", "alts": ["Engine Stop Board"]}, {"q": "53. Q50 relay is called as ________.", "answer": "Reversers Supervising Relay", "alts": ["Reverser supervising relay"]}, {"q": "11. In 3-phase locomotives, ________ type of batteries used.", "answer": "Ni-Cd", "alts": ["Nickel Cadmium"]}, {"q": "46. In a 3-phase locomotive, to switch on flasher light, the ________ switch is to be operated.", "answer": "BPFL", "alts": []}, {"q": "62. Full form of PTFE is ________.", "answer": "Polytetrafluoroethylene", "alts": ["Poly Tetra Fluoro Ethylene", "Poly Tetra Floro Ethylene", "Poly Tetra Floro Ethelyne", "Poly Tetra Fluoro Ethelyne"]}, {"q": "42. In a conventional locomotive, purpose of MVSL is ________.", "answer": "To cool SL", "alts": []}, {"q": "68. Full form of RTIS is ________.", "answer": "Real Time Train Information System", "alts": []}, {"q": "26. Maximum permissible speed ( MPS ) of the section shown in ________", "answer": "WTT", "alts": ["Working Time Table"]}, {"q": "39. In a conventional locomotive, purpose of MVRH is ________.", "answer": "To cool TFP oil & RPS", "alts": ["cool TFP oil and RPS"]}, {"q": "3. The Chief Crew Controller is the overall in-charge of the running staff of the ________.", "answer": "Depot", "alts": []}, {"q": "63. Full form of CMS is ________.", "answer": "Crew Management System", "alts": []}, {"q": "45. In a 3-phase dead locomotive, to apply parking brakes, press ________ side plunger of solenoid valve.", "answer": "Left", "alts": []}, {"q": "52. Q 44 relay is called as ________.", "answer": "RGR protection relay", "alts": []}, {"q": "35. In conventional locomotive, ________ type of batteries used.", "answer": "LA", "alts": ["Lead Acid"]}, {"q": "6. According to the booking pattern of ALPs for duty in freight trains, the primary consideration is ________.", "answer": "FIFO", "alts": ["First In First Out"]}, {"q": "10. In a conventional locomotive, HOM can be operated by ________ key.", "answer": "ZPT", "alts": []}, {"q": "20. In a WAG-12B locomotive, in place of rail guard ________ is provided.", "answer": "Stone deflector", "alts": []}, {"q": "29. Train Passing Signal at Danger is ________ type of accident.", "answer": "Indicative", "alts": ["Indicative accident"]}, {"q": "7. In case of any delay by the LP in applying brakes, the ALP shall apply the emergency brake through the ________, duly considering the Emergency Braking Distance (EBD) of the train.", "answer": "RS Valve", "alts": []}, {"q": "12. In 3-phase locomotives, primary over current relay is ________.", "answer": "OCR 78", "alts": []}]}, {"label": "Blanks Set 04", "type": "fib", "questions": [{"q": "51. Q118 relay is called as ________.", "answer": "Auxiliaries protection Relay", "alts": ["Auxiliary protection relay"]}, {"q": "40. In a conventional locomotive, purpose of MVMT-1 is ________.", "answer": "To cool TM 1,2 &3", "alts": ["cool TM 1,2,3"]}, {"q": "41. In a conventional locomotive, purpose of MVMT-2 is ________.", "answer": "To cool TM 4,5 & 6", "alts": ["cool TM 4,5,6"]}, {"q": "61. Full form of RDAS is ________.", "answer": "Railway Driver Assistance System", "alts": []}, {"q": "24. On DOWN track, the OHE masts numbered as ________.", "answer": "Even", "alts": []}, {"q": "25. To separate two different phases in OHE, a dead wire section is provided and is known as ________.", "answer": "Neutral section", "alts": ["Neutral"]}, {"q": "66. Full form of COA is ________.", "answer": "Control Office Application", "alts": []}, {"q": "70. Full form of SI (Reg.OHE) is ________.", "answer": "Section Insulator", "alts": []}, {"q": "60. Full form of DPWCS is ________.", "answer": "Distributed Power Wireless Control System", "alts": []}, {"q": "58. Full form of BPC is ________.", "answer": "Brake Power Certificate", "alts": []}]}]};
+// ALL_SETS = { random: [{label, type, questions:[...]}...], aim: [{label, type, questions:[...]}...] }
+
+// ===== TRACKING CONFIG: paste your Google Apps Script web app URL between the quotes =====
+const TRACK_URL = "https://script.google.com/macros/s/AKfycbxCzUYRKFBt-CGNaCjzfqOBnx7CHRcWbFlCI9SINBTrzY1G3-c0S4_1xD80G2Hy6y2C/exec";
+const TRACK_ON = TRACK_URL.indexOf('https://') === 0;
+
+// ===== user login (remembered on this device) =====
+const screenLogin = document.getElementById('screenLogin');
+let user = null;
+try { user = JSON.parse(localStorage.getItem('ettc_user') || 'null'); } catch(e) {}
+if(user && !user.id) user = null;
+
+// ===== tracking state =====
+let attemptId = '', startedAtISO = '', timeSpent = [], qStamp = 0, lastIdx = -1, abandoned = false, pingTimer = null;
+
+function flushTime(){
+  const now = Date.now();
+  if(lastIdx >= 0 && qStamp && timeSpent[lastIdx] !== undefined) timeSpent[lastIdx] += (now - qStamp) / 1000;
+  qStamp = now;
+}
+function quizActive(){ return !screenQuiz.classList.contains('hidden') && !submitted && attemptId && !abandoned; }
+
+function buildPayload(kind, status){
+  flushTime();
+  const total = activeQuestions.length;
+  let correct = 0, unans = 0;
+  const qs = activeQuestions.map((q,i)=>{
+    const ch = answers[i];
+    if(ch === null) unans++; else if(isRight(q, ch)) correct++;
+    return { pos: i+1, n: (q.q.match(/^(\d+)\./) || [])[1] || '', chosen: ch || '', correct: q.answer,
+             ok: ch === null ? '' : (isRight(q, ch) ? 1 : 0), sec: Math.round(timeSpent[i] || 0) };
+  });
+  const answered = total - unans;
+  const p = {
+    event: kind, status: status, attemptId: attemptId, name: user.name, userId: user.id || '',
+    set: activeLabel, total: total, answered: answered, correct: correct,
+    incorrect: answered - correct, unanswered: unans,
+    scorePct: Math.round((correct/total)*100),
+    elapsedSec: Math.max(0, total*secPer() - Math.max(0, secondsLeft)),
+    startedAt: startedAtISO
+  };
+  if(kind === 'final' || kind === 'abandon') p.questions = qs;
+  return p;
+}
+function sendTrack(payload, useBeacon){
+  if(!TRACK_ON) return;
+  try{
+    const body = JSON.stringify(payload);
+    if(useBeacon && navigator.sendBeacon){
+      navigator.sendBeacon(TRACK_URL, new Blob([body], {type:'text/plain;charset=UTF-8'}));
+      return;
+    }
+    fetch(TRACK_URL, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=UTF-8'}, body: body, keepalive:true}).catch(()=>{});
+  }catch(e){}
+}
+function trackAbandon(){
+  if(!quizActive()) return;
+  sendTrack(buildPayload('abandon', 'Abandoned'));
+  abandoned = true;
+  clearInterval(pingTimer);
+}
+function trackLeaving(){
+  if(quizActive()) sendTrack(buildPayload('progress', 'In progress'), true);
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'hidden') trackLeaving(); });
+window.addEventListener('pagehide', trackLeaving);
+
+function refreshUserLine(){
+  document.getElementById('userLine').textContent = user ? user.name : '';
+}
+function showAfterLogin(){
+  screenLogin.classList.add('hidden');
+  screenSelect.classList.remove('hidden');
+  refreshUserLine();
+  loadBoard();
+}
+document.getElementById('loginBtn').onclick = async ()=>{
+  const btn = document.getElementById('loginBtn'), err = document.getElementById('loginErr');
+  const id = document.getElementById('inName').value.replace(/\s+/g, '').toUpperCase();
+  err.classList.add('hidden');
+  if(!id){ err.textContent = 'Please enter your HRMS ID.'; err.classList.remove('hidden'); return; }
+  btn.disabled = true; btn.textContent = 'Checking...';
+  try{
+    const r = await fetch(TRACK_URL + '?id=' + encodeURIComponent(id));
+    const d = await r.json();
+    if(!d.ok) throw new Error('bad');
+    user = { id: id, name: d.name };
+    try { localStorage.setItem('ettc_user', JSON.stringify(user)); } catch(e) {}
+    showAfterLogin();
+  }catch(e){
+    err.textContent = 'Invalid HRMS ID or no connection. Please try again.';
+    err.classList.remove('hidden');
+  }
+  btn.disabled = false; btn.textContent = 'Continue';
+};
+document.getElementById('inName').addEventListener('keydown', (ev)=>{ if(ev.key === 'Enter') document.getElementById('loginBtn').onclick(); });
+document.getElementById('changeUser').onclick = ()=>{
+  try { localStorage.removeItem('ettc_user'); } catch(e) {}
+  user = null;
+  document.getElementById('inName').value = '';
+  document.getElementById('loginErr').classList.add('hidden');
+  screenSelect.classList.add('hidden');
+  screenLogin.classList.remove('hidden');
+};
+
+let activeQuestions = [];
+let activeLabel = '';
+let currentQ = 0;
+let answers = [];
+let timerInterval = null;
+let secondsLeft = 0;
+let submitted = false;
+
+const screenSelect = document.getElementById('screenSelect');
+const screenQuiz = document.getElementById('screenQuiz');
+const screenResults = document.getElementById('screenResults');
+
+function headerLamps(n){
+  const box = document.getElementById('headerLamps');
+  box.innerHTML = '';
+  for(let i=0;i<5;i++){
+    const d = document.createElement('div');
+    d.className = 'lamp' + (i < n ? ' on' : '');
+    box.appendChild(d);
+  }
+}
+let lampTick = 0;
+setInterval(()=>{ lampTick = (lampTick+1)%6; headerLamps(lampTick); }, 900);
+headerLamps(0);
+
+let activeKind = 'mcq';
+let activeTab = 'mcq';
+function secPer(){ return activeKind === 'fib' ? 45 : 30; }
+function kindOfLabel(l){ return /^Blanks/.test(String(l || '')) ? 'fib' : 'mcq'; }
+function normAns(s){
+  let t = String(s || '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim();
+  t = t.replace(/^(the|a|an|to)\s+/, '');
+  return t.replace(/\s+/g, '');
+}
+function isRight(q, a){
+  if(a === null || a === undefined) return false;
+  if(q.options) return a === q.answer;
+  const n = normAns(a);
+  if(!n) return false;
+  if(n === normAns(q.answer)) return true;
+  return (q.alts || []).some(x => normAns(x) === n);
+}
+
+function formatDuration(numQuestions, per){
+  const totalSeconds = numQuestions * (per || 30);
+  const m = Math.floor(totalSeconds/60);
+  const s = totalSeconds % 60;
+  return s === 0 ? (m + ' min') : (m + 'm ' + s + 's');
+}
+
+function buildSetGrid(containerId, sets, tagLabel){
+  const grid = document.getElementById(containerId);
+  grid.innerHTML = '';
+  sets.forEach((s)=>{
+    const c = document.createElement('div');
+    c.className = 'card';
+    c.innerHTML = `
+      <div class="switchmark"></div>
+      <div class="tag">${tagLabel}</div>
+      <div class="num">${s.label}</div>
+      <div class="qty">${s.questions.length} questions &middot; ${formatDuration(s.questions.length, s.type === 'fib' ? 45 : 30)}</div>
+    `;
+    c.onclick = ()=> startSet(s);
+    grid.appendChild(c);
+  });
+}
+buildSetGrid('setGridRandom', ALL_SETS.random, 'Random Set');
+buildSetGrid('setGridAim', ALL_SETS.aim, 'AIM Set');
+buildSetGrid('setGridFib', ALL_SETS.fib, 'Fill in the Blanks');
+
+function shuffleOptions(q){
+  if(!q.options) return Object.assign({}, q);
+  const letters = ['A', 'B', 'C', 'D'];
+  const items = letters.map(l => ({ orig: l, text: q.options[l] }));
+  const pinnedLast = items.filter(it => /^(all|none|above all|all of the|all the above|none of the above|none of above|a\s*&\s*b)$/i.test(String(it.text || '').trim()));
+  const pool = items.filter(it => !pinnedLast.includes(it));
+  for(let i = pool.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+  }
+  const finalItems = pool.concat(pinnedLast);
+  const newOpts = {};
+  let newAns = q.answer;
+  letters.forEach((l, idx) => {
+    newOpts[l] = finalItems[idx].text;
+    if(finalItems[idx].orig === q.answer) newAns = l;
+  });
+  return { q: q.q, options: newOpts, answer: newAns };
+}
+
+function startSet(setObj){
+  if(!user) return;
+  activeQuestions = setObj.questions.map(shuffleOptions);
+  for(let i = activeQuestions.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = activeQuestions[i]; activeQuestions[i] = activeQuestions[j]; activeQuestions[j] = t;
+  }
+  activeLabel = setObj.label;
+  activeKind = setObj.type === 'fib' ? 'fib' : 'mcq';
+  setTab(activeKind);
+  currentQ = 0;
+  answers = new Array(activeQuestions.length).fill(null);
+  submitted = false;
+  secondsLeft = activeQuestions.length * secPer();
+  screenSelect.classList.add('hidden');
+  screenResults.classList.add('hidden');
+  screenQuiz.classList.remove('hidden');
+  document.getElementById('quizTitle').textContent = activeLabel;
+  document.getElementById('qTotal').textContent = activeQuestions.length;
+  // tracking init
+  attemptId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  startedAtISO = new Date().toISOString();
+  timeSpent = new Array(activeQuestions.length).fill(0);
+  lastIdx = -1; qStamp = Date.now(); abandoned = false;
+  buildLampGrid();
+  renderQuestion();
+  startTimer();
+  sendTrack(buildPayload('start', 'Started'));
+  clearInterval(pingTimer);
+  pingTimer = setInterval(()=>{ if(quizActive()) sendTrack(buildPayload('progress', 'In progress')); }, 60000);
+}
+
+function startTimer(){
+  clearInterval(timerInterval);
+  updateTimerDisplay();
+  timerInterval = setInterval(()=>{
+    secondsLeft--;
+    updateTimerDisplay();
+    if(secondsLeft <= 0){
+      clearInterval(timerInterval);
+      finishQuiz();
+    }
+  }, 1000);
+}
+function updateTimerDisplay(){
+  const m = Math.max(0, Math.floor(secondsLeft/60));
+  const s = Math.max(0, secondsLeft%60);
+  const el = document.getElementById('timer');
+  el.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  el.classList.remove('warn','crit');
+  if(secondsLeft <= 60) el.classList.add('crit');
+  else if(secondsLeft <= 300) el.classList.add('warn');
+}
+
+function buildLampGrid(){
+  const wrap = document.getElementById('lampGrid');
+  wrap.innerHTML = '';
+  activeQuestions.forEach((_, i)=>{
+    const b = document.createElement('div');
+    b.className = 'lampbtn';
+    b.textContent = i+1;
+    b.onclick = ()=>{ currentQ = i; renderQuestion(); };
+    wrap.appendChild(b);
+  });
+}
+
+function renderQuestion(){
+  flushTime(); lastIdx = currentQ;
+  const set = activeQuestions;
+  const q = set[currentQ];
+  document.getElementById('qPos').textContent = currentQ+1;
+  document.getElementById('qLabel').textContent = 'QUESTION ' + String(currentQ+1).padStart(2,'0');
+  document.getElementById('qText').textContent = q.q.replace(/^\d+\.\s*/, '');
+  document.getElementById('progressFill').style.width = (((currentQ+1)/set.length)*100) + '%';
+
+  const box = document.getElementById('optsBox');
+  box.innerHTML = '';
+  const isFib = !q.options;
+  box.classList.toggle('hidden', isFib);
+  document.getElementById('fibBox').classList.toggle('hidden', !isFib);
+  if(isFib){
+    const inp = document.getElementById('fibInput');
+    inp.value = answers[currentQ] === null ? '' : answers[currentQ];
+    try { if(window.matchMedia && window.matchMedia('(pointer:fine)').matches) inp.focus(); } catch(e) {}
+  }
+  (isFib ? [] : ['A','B','C','D']).forEach(letter=>{
+    const opt = document.createElement('div');
+    opt.className = 'opt' + (answers[currentQ] === letter ? ' selected' : '');
+    opt.innerHTML = `<div class="letter">${letter}</div><div class="otext">${q.options[letter]}</div>`;
+    opt.onclick = ()=>{
+      answers[currentQ] = (answers[currentQ] === letter) ? null : letter;
+      renderQuestion();
+      refreshLamps();
+    };
+    box.appendChild(opt);
+  });
+
+  document.getElementById('prevBtn').disabled = currentQ === 0;
+  const isLast = currentQ === set.length - 1;
+  document.getElementById('nextBtn').classList.toggle('hidden', isLast);
+  document.getElementById('submitBtn').classList.toggle('hidden', !isLast);
+
+  refreshLamps();
+}
+
+function refreshLamps(){
+  const btns = document.querySelectorAll('.lampbtn');
+  btns.forEach((b,i)=>{
+    b.classList.toggle('answered', answers[i] !== null);
+    b.classList.toggle('current', i === currentQ);
+  });
+  const total = activeQuestions.length;
+  const answeredCount = answers.filter(a=>a!==null).length;
+  document.getElementById('countAnswered').textContent = answeredCount + '/' + total;
+  document.getElementById('countUnanswered').textContent = (total - answeredCount) + '/' + total;
+}
+
+document.getElementById('nextBtn').onclick = ()=>{
+  if(currentQ < activeQuestions.length - 1){ currentQ++; renderQuestion(); }
+};
+document.getElementById('prevBtn').onclick = ()=>{
+  if(currentQ > 0){ currentQ--; renderQuestion(); }
+};
+const fibInputEl = document.getElementById('fibInput');
+fibInputEl.addEventListener('input', ()=>{
+  answers[currentQ] = fibInputEl.value.trim() === '' ? null : fibInputEl.value;
+  refreshLamps();
+});
+fibInputEl.addEventListener('keydown', (ev)=>{
+  if(ev.key === 'Enter'){
+    if(ev.preventDefault) ev.preventDefault();
+    if(currentQ < activeQuestions.length - 1){ currentQ++; renderQuestion(); }
+  }
+});
+document.getElementById('clearBtn').onclick = ()=>{
+  answers[currentQ] = null; renderQuestion(); refreshLamps();
+};
+function askSubmit(){
+  const unanswered = answers.filter(a=>a===null).length;
+  const msg = unanswered > 0
+    ? ('You have ' + unanswered + ' unanswered question(s). Are you sure you want to submit?')
+    : 'Are you sure you want to submit the test?';
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmModal').classList.remove('hidden');
+}
+document.getElementById('confirmNo').onclick = ()=>{
+  document.getElementById('confirmModal').classList.add('hidden');
+};
+document.getElementById('confirmYes').onclick = ()=>{
+  document.getElementById('confirmModal').classList.add('hidden');
+  finishQuiz();
+};
+document.getElementById('submitBtn').onclick = askSubmit;
+document.getElementById('submitBtnSide').onclick = askSubmit;
+document.getElementById('backLink').onclick = ()=>{
+  if(confirm('End this test and go back to the main list? Your progress will be lost.')){
+    trackAbandon();
+    clearInterval(timerInterval);
+    screenQuiz.classList.add('hidden');
+    screenSelect.classList.remove('hidden');
+    loadBoard();
+  }
+};
+document.getElementById('restartLink').onclick = ()=>{
+  screenResults.classList.add('hidden');
+  screenSelect.classList.remove('hidden');
+  loadBoard();
+};
+
+function goHome(){
+  if(!user) return;
+  if(!screenQuiz.classList.contains('hidden') && !submitted){
+    if(!confirm('End this test and go back to the main list? Your progress will be lost.')) return;
+    trackAbandon();
+    clearInterval(timerInterval);
+  }
+  screenQuiz.classList.add('hidden');
+  screenResults.classList.add('hidden');
+  screenSelect.classList.remove('hidden');
+  loadBoard();
+}
+document.getElementById('brandHome').onclick = goHome;
+
+function finishQuiz(){
+  if(submitted) return;
+  const timedOut = secondsLeft <= 0;
+  submitted = true;
+  clearInterval(timerInterval);
+  clearInterval(pingTimer);
+  if(attemptId && !abandoned) sendTrack(buildPayload('final', timedOut ? 'Timed out' : 'Submitted'));
+  const set = activeQuestions;
+  let correct = 0;
+  set.forEach((q,i)=>{ if(isRight(q, answers[i])) correct++; });
+  const total = set.length;
+  const pct = Math.round((correct/total)*100);
+
+  screenQuiz.classList.add('hidden');
+  screenResults.classList.remove('hidden');
+
+  const big = document.getElementById('scoreBig');
+  big.textContent = correct + '/' + total;
+  big.className = 'big ' + (pct >= 60 ? 'pass' : 'fail');
+
+  const timeTaken = (total*secPer()) - Math.max(0,secondsLeft);
+  try {
+    const rows = JSON.parse(localStorage.getItem('ettc_local') || '[]');
+    const lrow = {id: attemptId, name: user.name, set: activeLabel, correct: correct, total: total, scorePct: pct, timeSec: timeTaken, at: new Date().toISOString()};
+    rows.push(lrow); pendingRow = lrow;
+    localStorage.setItem('ettc_local', JSON.stringify(rows.slice(-100)));
+  } catch(e) {}
+  const mm = Math.floor(timeTaken/60), ss = timeTaken%60;
+  document.getElementById('scoreMeta').innerHTML =
+    'Score: ' + pct + '%<br>' +
+    'Correct: ' + correct + ' &nbsp; Incorrect: ' + (total - correct - answers.filter(a=>a===null).length) + ' &nbsp; Unanswered: ' + answers.filter(a=>a===null).length + '<br>' +
+    'Time taken: ' + String(mm).padStart(2,'0') + ':' + String(ss).padStart(2,'0') +
+    (TRACK_ON ? '<br><span id="rankLine">Leaderboard rank: checking&hellip;</span>' : '');
+  if(TRACK_ON){
+    fillSetSelect('resBoardSet', activeKind);
+    document.getElementById('resBoardSet').value = activeLabel;
+    renderResultBoard();
+    const aid = attemptId; setTimeout(() => updateRank(0, aid), 1500);
+  }
+
+  const list = document.getElementById('reviewList');
+  list.innerHTML = '';
+  reviewItems = [];
+  set.forEach((q,i)=>{
+    const chosen = answers[i];
+    const isCorrect = isRight(q, chosen);
+    const div = document.createElement('div');
+    div.className = 'reviewq';
+    let badge = chosen === null
+      ? '<span class="badge skip">Skipped</span>'
+      : (isCorrect ? '<span class="badge correct">Correct</span>' : '<span class="badge wrong">Incorrect</span>');
+    const origNo = (q.q.match(/^(\d+)\./) || [])[1];
+    div.innerHTML = `<div class="qnum">QUESTION ${i+1}${origNo ? ' &middot; ORIGINAL Q.' + origNo : ''}${badge}</div><div class="qtext">${q.q.replace(/^\d+\.\s*/, '')}</div>`;
+    const optsDiv = document.createElement('div');
+    if(!q.options){
+      const ya = document.createElement('div');
+      ya.className = 'opt' + (chosen === null ? '' : (isCorrect ? ' correct' : ' wrong'));
+      ya.innerHTML = `<div class="letter">You</div><div class="otext">${chosen === null ? 'Not answered' : esc(chosen)}</div>`;
+      optsDiv.appendChild(ya);
+      if(!isCorrect){
+        const ca = document.createElement('div');
+        ca.className = 'opt correct';
+        ca.innerHTML = `<div class="letter">Ans</div><div class="otext">${esc(q.answer)}</div>`;
+        optsDiv.appendChild(ca);
+      }
+    }
+    (q.options ? ['A','B','C','D'] : []).forEach(letter=>{
+      const o = document.createElement('div');
+      let cls = 'opt';
+      if(letter === q.answer) cls += ' correct';
+      else if(letter === chosen && !isCorrect) cls += ' wrong';
+      o.className = cls;
+      o.innerHTML = `<div class="letter">${letter}</div><div class="otext">${q.options[letter]}</div>`;
+      optsDiv.appendChild(o);
+    });
+    div.appendChild(optsDiv);
+    list.appendChild(div);
+    reviewItems.push({div: div, st: chosen === null ? 'skip' : (isCorrect ? 'correct' : 'wrong')});
+  });
+  setupReviewFilter();
+  document.getElementById('aimWrap').classList.toggle('hidden', activeKind === 'fib');
+  if(activeKind !== 'fib') renderAimSummary(set);
+}
+
+// ===== leaderboard + my scores =====
+let boardData = [];
+function nameKey(n){ return String(n || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtTime(sec){ sec = Math.round(sec || 0); return Math.floor(sec/60) + 'm ' + String(sec % 60).padStart(2,'0') + 's'; }
+function fmtDate(iso){ if(!iso) return ''; const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString(undefined, {day:'numeric', month:'short'}); }
+
+let pendingRow = null;
+function allRows(){
+  return (pendingRow && !boardData.some(r => r.id === pendingRow.id)) ? boardData.concat([pendingRow]) : boardData;
+}
+function boardHtml(list, me){
+  if(!list.length) return '<div class="lempty">No scores yet. Be the first!</div>';
+  let out = '', prev = -1;
+  list.forEach((e, i) => {
+    if(i >= 15 && e.key !== me) return;
+    if(prev >= 0 && i > prev + 1) out += '<div class="lgap">&hellip;</div>';
+    prev = i;
+    out += `<div class="lrow ${e.key === me ? 'me' : ''}"><div class="lrank">${i+1}</div><div class="lmain">${esc(e.name)}</div><div class="lsub"><b>${e.best}%</b> &middot; ${e.attempts} attempt${e.attempts > 1 ? 's' : ''}</div></div>`;
+  });
+  return out;
+}
+function renderResultBoard(){
+  const el = document.getElementById('resBoardList');
+  if(!el || !user || !TRACK_ON) return;
+  el.innerHTML = boardHtml(rankList(document.getElementById('resBoardSet').value, activeKind), nameKey(user.name));
+}
+function rankList(setLabel, kind){
+  const m = {};
+  allRows().forEach(r => {
+    if(setLabel && r.set !== setLabel) return;
+    if(kind && kindOfLabel(r.set) !== kind) return;
+    const k = nameKey(r.name); if(!k) return;
+    const e = m[k] || (m[k] = {key:k, name:r.name, best:-1, time:0, attempts:0});
+    e.attempts++;
+    if(r.scorePct > e.best || (r.scorePct === e.best && r.timeSec < e.time)){ e.best = r.scorePct; e.time = r.timeSec; }
+  });
+  return Object.values(m).sort((a,b) => (b.best - a.best) || (a.time - b.time));
+}
+
+function localRows(){
+  try { return JSON.parse(localStorage.getItem('ettc_local') || '[]'); } catch(e) { return []; }
+}
+function renderBoard(){
+  if(!user) return;
+  const me = nameKey(user.name);
+  const source = TRACK_ON ? allRows() : localRows();
+  const mine = source.filter(r => nameKey(r.name) === me && kindOfLabel(r.set) === activeTab).sort((a,b) => new Date(b.at) - new Date(a.at)).slice(0, 10);
+  document.getElementById('myScores').innerHTML = mine.length
+    ? mine.map(r => `<div class="lrow"><div class="lmain">${esc(r.set)}</div><div class="lsub">${r.correct}/${r.total} &middot; <b>${r.scorePct}%</b> &middot; ${fmtTime(r.timeSec)} &middot; ${fmtDate(r.at)}</div></div>`).join('')
+    : '<div class="lempty">No completed attempts yet.</div>';
+
+  const list = rankList(document.getElementById('boardSet').value, activeTab);
+  const el = document.getElementById('boardList');
+  if(!TRACK_ON){ el.innerHTML = '<div class="lempty">The shared leaderboard switches on once the score server is connected.</div>'; return; }
+  el.innerHTML = boardHtml(list, me);
+  renderResultBoard();
+}
+
+async function loadBoard(){
+  if(!TRACK_ON){ renderBoard(); return; }
+  try{
+    const r = await fetch(TRACK_URL + (TRACK_URL.indexOf('?') >= 0 ? '&' : '?') + 'action=leaderboard&t=' + Date.now());
+    const j = await r.json();
+    boardData = (j && j.rows) || [];
+    renderBoard();
+  }catch(e){
+    const el = document.getElementById('boardList');
+    if(el && !boardData.length) el.innerHTML = '<div class="lempty">Could not load. Tap Refresh.</div>';
+  }
+}
+
+async function updateRank(tries, aid){
+  const el = document.getElementById('rankLine'); if(!el) return;
+  await loadBoard();
+  if(!boardData.some(r => r.id === aid) && tries < 6){ setTimeout(() => updateRank(tries + 1, aid), 2500); return; }
+  const list = rankList('', activeKind); const idx = list.findIndex(e => e.key === nameKey(user.name));
+  el.textContent = idx >= 0 ? ('Leaderboard rank: #' + (idx + 1) + ' of ' + list.length + ' (by best score)') : '';
+}
+
+function fillSetSelect(id, kind){
+  const sel = document.getElementById(id);
+  sel.innerHTML = '';
+  const add = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); };
+  add('', 'All sets');
+  (kind === 'fib' ? ALL_SETS.fib : ALL_SETS.random.concat(ALL_SETS.aim)).forEach(s => add(s.label, s.label));
+}
+document.getElementById('boardSet').onchange = renderBoard;
+function setTab(t){
+  activeTab = t;
+  document.getElementById('panelMcq').classList.toggle('hidden', t !== 'mcq');
+  document.getElementById('panelFib').classList.toggle('hidden', t !== 'fib');
+  document.getElementById('tabMcq').classList.toggle('on', t === 'mcq');
+  document.getElementById('tabFib').classList.toggle('on', t === 'fib');
+  fillSetSelect('boardSet', t);
+  renderBoard();
+}
+document.getElementById('tabMcq').onclick = () => setTab('mcq');
+document.getElementById('tabFib').onclick = () => setTab('fib');
+document.getElementById('boardRefresh').onclick = loadBoard;
+fillSetSelect('boardSet', 'mcq');
+fillSetSelect('resBoardSet', 'mcq');
+document.getElementById('resBoardSet').onchange = renderResultBoard;
+document.getElementById('resBoardRefresh').onclick = loadBoard;
+if(TRACK_ON) document.getElementById('resBoardWrap').classList.remove('hidden');
+document.getElementById('boardWrap').classList.remove('hidden');
+
+// ===== review filter + AIM summary =====
+let reviewItems = [];
+function setupReviewFilter(){
+  const sel = document.getElementById('reviewFilter');
+  const n = {correct:0, wrong:0, skip:0};
+  reviewItems.forEach(x => n[x.st]++);
+  sel.innerHTML = '';
+  [['all', 'All questions (' + reviewItems.length + ')'], ['correct', 'Correct (' + n.correct + ')'],
+   ['wrong', 'Wrong (' + n.wrong + ')'], ['skip', 'Not answered (' + n.skip + ')']].forEach(o => {
+    const op = document.createElement('option'); op.value = o[0]; op.textContent = o[1]; sel.appendChild(op);
+  });
+  sel.value = 'all';
+  sel.onchange = () => reviewItems.forEach(x => { x.div.style.display = (sel.value === 'all' || x.st === sel.value) ? '' : 'none'; });
+  reviewItems.forEach(x => { x.div.style.display = ''; });
+}
+
+function aimOf(n){
+  n = +n;
+  if(n >= 1 && n <= 54) return 'AIM 1-6';
+  if(n >= 55 && n <= 118) return 'AIM 7';
+  if(n >= 119 && n <= 162) return 'AIM 8';
+  if(n >= 163 && n <= 215) return 'AIM 9-11';
+  if(n >= 216 && n <= 268) return 'AIM 12-14';
+  return '';
+}
+function renderAimSummary(set){
+  const order = ['AIM 1-6', 'AIM 7', 'AIM 8', 'AIM 9-11', 'AIM 12-14'];
+  const t = {};
+  set.forEach((q, i) => {
+    const a = aimOf((q.q.match(/^(\d+)\./) || [])[1]); if(!a) return;
+    const e = t[a] || (t[a] = {total:0, right:0});
+    e.total++; if(answers[i] === q.answer) e.right++;
+  });
+  const rows = order.filter(a => t[a]).map(a => {
+    const e = t[a], pct = Math.round(e.right / e.total * 100);
+    const v = pct >= 70 ? ['strong', 'Strong'] : (pct >= 40 ? ['average', 'Average'] : ['weak', 'Weak']);
+    return `<div class="lrow"><div class="lmain">${a}</div><div class="lsub">${e.right}/${e.total} &middot; <b>${pct}%</b></div><span class="vbadge ${v[0]}">${v[1]}</span></div>`;
+  });
+  document.getElementById('aimSummary').innerHTML = rows.join('') +
+    '<div class="lempty" style="font-size:12px;">Strong: 70%+ &middot; Average: 40-69% &middot; Weak: below 40%</div>';
+}
+
+// ===== init =====
+if(user) showAfterLogin(); else screenLogin.classList.remove('hidden');
+</script>
+<div class="wm">GC</div>
+</body>
+</html>
