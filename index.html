@@ -217,6 +217,7 @@
   .modal-title{font-family:var(--disp);font-size:22px;text-transform:uppercase;letter-spacing:.03em;margin:0 0 8px;}
   .modal-msg{font-size:14.5px;color:var(--muted);line-height:1.5;margin-bottom:18px;}
   .modal-btns{display:flex;gap:10px;justify-content:flex-end;}
+  #resBoardList{max-height:460px;overflow-y:auto;}
 </style>
   <!-- CONFIRM SUBMIT MODAL -->
   <div id="confirmModal" class="modal-bg hidden">
@@ -365,8 +366,8 @@ document.documentElement.setAttribute('data-theme', 'dark');
 
     <div id="resBoardWrap" class="hidden">
       <div class="sectionhead boardhead" style="margin-top:0;">
-        <span>Leaderboard</span>
-        <span class="boardctl"><select id="resBoardSet" class="bsel"></select><button id="resBoardRefresh" class="ghost bbtn">Refresh</button></span>
+        <span id="resBoardTitle">Leaderboard</span>
+        <span class="boardctl"><span id="resBoardCount" class="lsub"></span><button id="resBoardRefresh" class="ghost bbtn">Refresh</button></span>
       </div>
       <div id="resBoardList" class="listbox"><div class="lempty">Loading&hellip;</div></div>
     </div>
@@ -795,8 +796,6 @@ function finishQuiz(){
     'Time taken: ' + String(mm).padStart(2,'0') + ':' + String(ss).padStart(2,'0') +
     (TRACK_ON ? '<br><span id="rankLine">Leaderboard rank: checking&hellip;</span>' : '');
   if(TRACK_ON){
-    fillSetSelect('resBoardSet', activeKind);
-    document.getElementById('resBoardSet').value = activeLabel;
     renderResultBoard();
     const aid = attemptId; setTimeout(() => updateRank(0, aid), 1500);
   }
@@ -856,11 +855,11 @@ let pendingRow = null;
 function allRows(){
   return (pendingRow && !boardData.some(r => r.id === pendingRow.id)) ? boardData.concat([pendingRow]) : boardData;
 }
-function boardHtml(list, me){
+function boardHtml(list, me, full){
   if(!list.length) return '<div class="lempty">No scores yet. Be the first!</div>';
   let out = '', prev = -1;
   list.forEach((e, i) => {
-    if(i >= 15 && e.key !== me) return;
+    if(!full && i >= 15 && e.key !== me) return;
     if(prev >= 0 && i > prev + 1) out += '<div class="lgap">&hellip;</div>';
     prev = i;
     out += `<div class="lrow ${e.key === me ? 'me' : ''}"><div class="lrank">${i+1}</div><div class="lmain">${esc(e.name)}</div><div class="lsub"><b>${e.best}%</b> &middot; ${e.attempts} attempt${e.attempts > 1 ? 's' : ''}</div></div>`;
@@ -869,8 +868,11 @@ function boardHtml(list, me){
 }
 function renderResultBoard(){
   const el = document.getElementById('resBoardList');
-  if(!el || !user || !TRACK_ON) return;
-  el.innerHTML = boardHtml(rankList(document.getElementById('resBoardSet').value, activeKind), nameKey(user.name));
+  if(!el || !user || !TRACK_ON || !activeLabel) return;
+  const list = rankList(activeLabel, activeKind);
+  document.getElementById('resBoardTitle').textContent = 'Leaderboard \u00b7 ' + activeLabel;
+  document.getElementById('resBoardCount').textContent = list.length + ' attempted';
+  el.innerHTML = boardHtml(list, nameKey(user.name), true);
 }
 function rankList(setLabel, kind){
   const m = {};
@@ -946,8 +948,6 @@ document.getElementById('tabMcq').onclick = () => setTab('mcq');
 document.getElementById('tabFib').onclick = () => setTab('fib');
 document.getElementById('boardRefresh').onclick = loadBoard;
 fillSetSelect('boardSet', 'mcq');
-fillSetSelect('resBoardSet', 'mcq');
-document.getElementById('resBoardSet').onchange = renderResultBoard;
 document.getElementById('resBoardRefresh').onclick = loadBoard;
 if(TRACK_ON) document.getElementById('resBoardWrap').classList.remove('hidden');
 document.getElementById('boardWrap').classList.remove('hidden');
