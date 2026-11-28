@@ -187,6 +187,19 @@
   .lsub b{color:var(--text);}
   .lempty{padding:16px;color:var(--muted);font-size:13.5px;}
   .lgap{padding:4px 14px;color:var(--muted);font-family:var(--mono);}
+  .ltbl-wrap{overflow-x:auto;}
+  .ltbl{width:100%;border-collapse:collapse;font-size:13.5px;}
+  .ltbl th{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--panel-2);white-space:nowrap;}
+  .ltbl td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  .ltbl tr:last-child td{border-bottom:none;}
+  .ltbl tr.me{background:var(--sel-bg);}
+  .ltbl tr.me td:first-child{border-left:3px solid var(--amber);}
+  .ltbl .numcol{font-family:var(--mono);white-space:nowrap;}
+  .ltbl .rankcol{font-family:var(--mono);color:var(--amber);width:36px;}
+  .ltbl .subnote{display:block;font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:2px;}
+  .res-banner{margin-top:12px;padding:11px 14px;border-radius:6px;font-family:var(--mono);font-size:13.5px;font-weight:600;border:1px solid;}
+  .res-banner.perfect{background:var(--ok-bg);color:var(--green);border-color:var(--green);}
+  .res-banner.kapt{background:var(--bad-bg);color:var(--red);border-color:var(--red);}
   .boardhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
   .boardctl{display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;}
   .bsel{font-size:13px;padding:7px 8px;border-radius:6px;border:1px solid var(--border);background:var(--panel-2);color:var(--text);max-width:150px;}
@@ -217,7 +230,6 @@
   .modal-title{font-family:var(--disp);font-size:22px;text-transform:uppercase;letter-spacing:.03em;margin:0 0 8px;}
   .modal-msg{font-size:14.5px;color:var(--muted);line-height:1.5;margin-bottom:18px;}
   .modal-btns{display:flex;gap:10px;justify-content:flex-end;}
-  #resBoardList{max-height:460px;overflow-y:auto;}
 </style>
   <!-- CONFIRM SUBMIT MODAL -->
   <div id="confirmModal" class="modal-bg hidden">
@@ -366,8 +378,8 @@ document.documentElement.setAttribute('data-theme', 'dark');
 
     <div id="resBoardWrap" class="hidden">
       <div class="sectionhead boardhead" style="margin-top:0;">
-        <span id="resBoardTitle">Leaderboard</span>
-        <span class="boardctl"><span id="resBoardCount" class="lsub"></span><button id="resBoardRefresh" class="ghost bbtn">Refresh</button></span>
+        <span>Leaderboard</span>
+        <span class="boardctl"><select id="resBoardSet" class="bsel"></select><button id="resBoardRefresh" class="ghost bbtn">Refresh</button></span>
       </div>
       <div id="resBoardList" class="listbox"><div class="lempty">Loading&hellip;</div></div>
     </div>
@@ -790,12 +802,23 @@ function finishQuiz(){
     localStorage.setItem('ettc_local', JSON.stringify(rows.slice(-100)));
   } catch(e) {}
   const mm = Math.floor(timeTaken/60), ss = timeTaken%60;
+  const unansCount = answers.filter(a=>a===null).length;
+  const incorrectCount = total - correct - unansCount;
+  let statusBanner = '';
+  if(correct === total && total > 0){
+    statusBanner = `<div class="res-banner perfect">&#127942; FULL MARKS! ${correct}/${total} (100%) — RAPPA RAPPA!</div>`;
+  } else if(incorrectCount > 0){
+    statusBanner = `<div class="res-banner kapt">&#9888; KAPT ee &mdash; ${incorrectCount} Incorrect Answer${incorrectCount > 1 ? 's' : ''} (${correct}/${total} &middot; ${pct}%)</div>`;
+  }
   document.getElementById('scoreMeta').innerHTML =
     'Score: ' + pct + '%<br>' +
-    'Correct: ' + correct + ' &nbsp; Incorrect: ' + (total - correct - answers.filter(a=>a===null).length) + ' &nbsp; Unanswered: ' + answers.filter(a=>a===null).length + '<br>' +
+    'Correct: ' + correct + ' &nbsp; Incorrect: ' + incorrectCount + ' &nbsp; Unanswered: ' + unansCount + '<br>' +
     'Time taken: ' + String(mm).padStart(2,'0') + ':' + String(ss).padStart(2,'0') +
-    (TRACK_ON ? '<br><span id="rankLine">Leaderboard rank: checking&hellip;</span>' : '');
+    (TRACK_ON ? '<br><span id="rankLine">Leaderboard rank: checking&hellip;</span>' : '') +
+    statusBanner;
   if(TRACK_ON){
+    fillSetSelect('resBoardSet', activeKind);
+    document.getElementById('resBoardSet').value = activeLabel;
     renderResultBoard();
     const aid = attemptId; setTimeout(() => updateRank(0, aid), 1500);
   }
@@ -855,36 +878,60 @@ let pendingRow = null;
 function allRows(){
   return (pendingRow && !boardData.some(r => r.id === pendingRow.id)) ? boardData.concat([pendingRow]) : boardData;
 }
-function boardHtml(list, me, full){
+function boardHtml(list, me, setLabel){
   if(!list.length) return '<div class="lempty">No scores yet. Be the first!</div>';
-  let out = '', prev = -1;
+  const isOverall = (setLabel === '__OVERALL__');
+  const isAllSets = (!setLabel || isOverall);
+  let rowsHtml = '', prev = -1;
   list.forEach((e, i) => {
-    if(!full && i >= 15 && e.key !== me) return;
-    if(prev >= 0 && i > prev + 1) out += '<div class="lgap">&hellip;</div>';
+    if(i >= 20 && e.key !== me) return;
+    if(prev >= 0 && i > prev + 1){
+      rowsHtml += `<tr><td colspan="6" class="lgap">&hellip;</td></tr>`;
+    }
     prev = i;
-    out += `<div class="lrow ${e.key === me ? 'me' : ''}"><div class="lrank">${i+1}</div><div class="lmain">${esc(e.name)}</div><div class="lsub"><b>${e.best}%</b> &middot; ${e.attempts} attempt${e.attempts > 1 ? 's' : ''}</div></div>`;
+    const marksCell = `${e.bestCorrect}/${e.bestTotal}` + (isAllSets && e.bestSet ? `<span class="subnote">${esc(e.bestSet)}</span>` : '');
+    const setsCell = isAllSets ? `<td class="numcol">${e.setsCount}</td>` : '';
+    rowsHtml += `<tr class="${e.key === me ? 'me' : ''}">` +
+      `<td class="rankcol">${i+1}</td>` +
+      `<td>${esc(e.name)}</td>` +
+      setsCell +
+      `<td class="numcol"><b>${marksCell}</b></td>` +
+      `<td class="numcol"><b>${e.best}%</b></td>` +
+      `<td class="numcol">${e.attempts}</td>` +
+    `</tr>`;
   });
-  return out;
+  return `<div class="ltbl-wrap"><table class="ltbl"><thead><tr>` +
+    `<th>#</th><th>Trainee</th>` +
+    (isAllSets ? `<th>Sets Written</th>` : ``) +
+    `<th>Best Marks</th><th>Best %</th><th>Attempts</th>` +
+    `</tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
 }
 function renderResultBoard(){
   const el = document.getElementById('resBoardList');
-  if(!el || !user || !TRACK_ON || !activeLabel) return;
-  const list = rankList(activeLabel, activeKind);
-  document.getElementById('resBoardTitle').textContent = 'Leaderboard \u00b7 ' + activeLabel;
-  document.getElementById('resBoardCount').textContent = list.length + ' attempted';
-  el.innerHTML = boardHtml(list, nameKey(user.name), true);
+  if(!el || !user || !TRACK_ON) return;
+  const selVal = document.getElementById('resBoardSet').value;
+  el.innerHTML = boardHtml(rankList(selVal, activeKind), nameKey(user.name), selVal);
 }
 function rankList(setLabel, kind){
   const m = {};
+  const isOverall = (setLabel === '__OVERALL__');
   allRows().forEach(r => {
-    if(setLabel && r.set !== setLabel) return;
-    if(kind && kindOfLabel(r.set) !== kind) return;
+    if(setLabel && !isOverall && r.set !== setLabel) return;
+    if(!isOverall && kind && kindOfLabel(r.set) !== kind) return;
     const k = nameKey(r.name); if(!k) return;
-    const e = m[k] || (m[k] = {key:k, name:r.name, best:-1, time:0, attempts:0});
+    const e = m[k] || (m[k] = {key:k, name:r.name, best:-1, bestCorrect:0, bestTotal:0, bestSet:'', time:0, attempts:0, sets:{}});
     e.attempts++;
-    if(r.scorePct > e.best || (r.scorePct === e.best && r.timeSec < e.time)){ e.best = r.scorePct; e.time = r.timeSec; }
+    if(r.set) e.sets[r.set] = true;
+    e.setsCount = Object.keys(e.sets).length;
+    if(r.scorePct > e.best || (r.scorePct === e.best && r.timeSec < e.time)){
+      e.best = r.scorePct;
+      e.bestCorrect = r.correct;
+      e.bestTotal = r.total;
+      e.bestSet = r.set || '';
+      e.time = r.timeSec;
+    }
   });
-  return Object.values(m).sort((a,b) => (b.best - a.best) || (a.time - b.time));
+  return Object.values(m).sort((a,b) => (b.best - a.best) || (b.setsCount - a.setsCount) || (a.time - b.time));
 }
 
 function localRows(){
@@ -899,10 +946,11 @@ function renderBoard(){
     ? mine.map(r => `<div class="lrow"><div class="lmain">${esc(r.set)}</div><div class="lsub">${r.correct}/${r.total} &middot; <b>${r.scorePct}%</b> &middot; ${fmtTime(r.timeSec)} &middot; ${fmtDate(r.at)}</div></div>`).join('')
     : '<div class="lempty">No completed attempts yet.</div>';
 
-  const list = rankList(document.getElementById('boardSet').value, activeTab);
+  const selVal = document.getElementById('boardSet').value;
+  const list = rankList(selVal, activeTab);
   const el = document.getElementById('boardList');
   if(!TRACK_ON){ el.innerHTML = '<div class="lempty">The shared leaderboard switches on once the score server is connected.</div>'; return; }
-  el.innerHTML = boardHtml(list, me);
+  el.innerHTML = boardHtml(list, me, selVal);
   renderResultBoard();
 }
 
@@ -931,7 +979,8 @@ function fillSetSelect(id, kind){
   const sel = document.getElementById(id);
   sel.innerHTML = '';
   const add = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); };
-  add('', 'All sets');
+  add('__OVERALL__', 'Overall (MCQs + Blanks)');
+  add('', kind === 'fib' ? 'All Blanks sets' : 'All MCQ sets');
   (kind === 'fib' ? ALL_SETS.fib : ALL_SETS.random.concat(ALL_SETS.aim)).forEach(s => add(s.label, s.label));
 }
 document.getElementById('boardSet').onchange = renderBoard;
@@ -948,6 +997,8 @@ document.getElementById('tabMcq').onclick = () => setTab('mcq');
 document.getElementById('tabFib').onclick = () => setTab('fib');
 document.getElementById('boardRefresh').onclick = loadBoard;
 fillSetSelect('boardSet', 'mcq');
+fillSetSelect('resBoardSet', 'mcq');
+document.getElementById('resBoardSet').onchange = renderResultBoard;
 document.getElementById('resBoardRefresh').onclick = loadBoard;
 if(TRACK_ON) document.getElementById('resBoardWrap').classList.remove('hidden');
 document.getElementById('boardWrap').classList.remove('hidden');
