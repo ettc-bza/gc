@@ -285,12 +285,18 @@ document.documentElement.setAttribute('data-theme', 'dark');
 
       <div class="sectionhead">AIM Sets</div>
       <div class="grid" id="setGridAim"></div>
+
+      <div class="sectionhead">Wrong Question Quiz</div>
+      <div id="wrongQuizMcqBox" class="listbox"></div>
     </div>
 
     <div id="panelFib" class="hidden">
       <div class="lead">Type the answer for each blank. Pick a set to begin.</div>
       <div class="sectionhead">Fill in the Blanks Sets</div>
       <div class="grid" id="setGridFib"></div>
+
+      <div class="sectionhead">Wrong Question Quiz</div>
+      <div id="wrongQuizFibBox" class="listbox"></div>
     </div>
 
     <div id="boardWrap" class="hidden">
@@ -470,6 +476,7 @@ function showAfterLogin(){
   screenLogin.classList.add('hidden');
   screenSelect.classList.remove('hidden');
   refreshUserLine();
+  renderWrongQuizSection();
   loadBoard();
 }
 document.getElementById('loginBtn').onclick = async ()=>{
@@ -503,6 +510,7 @@ document.getElementById('changeUser').onclick = ()=>{
 
 let activeQuestions = [];
 let activeLabel = '';
+let isWrongQuizSession = false;
 let currentQ = 0;
 let answers = [];
 let timerInterval = null;
@@ -599,6 +607,7 @@ function startSet(setObj){
     const t = activeQuestions[i]; activeQuestions[i] = activeQuestions[j]; activeQuestions[j] = t;
   }
   activeLabel = setObj.label;
+  isWrongQuizSession = !!setObj.isWrongQuiz;
   activeKind = setObj.type === 'fib' ? 'fib' : 'mcq';
   setTab(activeKind);
   currentQ = 0;
@@ -786,6 +795,10 @@ function finishQuiz(){
   set.forEach((q,i)=>{ if(isRight(q, answers[i])) correct++; });
   const total = set.length;
   const pct = Math.round((correct/total)*100);
+  const addedWrongCount = recordWrongQuestions(set, answers, activeLabel);
+  if(isWrongQuizSession){
+    removeMasteredFromWrongBank(set, answers);
+  }
 
   screenQuiz.classList.add('hidden');
   screenResults.classList.remove('hidden');
@@ -815,6 +828,7 @@ function finishQuiz(){
     'Correct: ' + correct + ' &nbsp; Incorrect: ' + incorrectCount + ' &nbsp; Unanswered: ' + unansCount + '<br>' +
     'Time taken: ' + String(mm).padStart(2,'0') + ':' + String(ss).padStart(2,'0') +
     (TRACK_ON ? '<br><span id="rankLine">Leaderboard rank: checking&hellip;</span>' : '') +
+    (addedWrongCount > 0 ? `<br><span style="color:var(--amber);">Added ${addedWrongCount} new wrong question${addedWrongCount > 1 ? 's' : ''} to Wrong Question Quiz</span>` : '') +
     statusBanner;
   if(TRACK_ON){
     fillSetSelect('resBoardSet', activeKind);
@@ -1043,6 +1057,169 @@ function renderAimSummary(set){
   });
   document.getElementById('aimSummary').innerHTML = rows.join('') +
     '<div class="lempty" style="font-size:12px;">Strong: 70%+ &middot; Average: 40-69% &middot; Weak: below 40%</div>';
+}
+
+
+// ===== WRONG QUESTION QUIZ BANK (per user / device) =====
+const WRONG_BANK_PREFIX = 'ettc_wrong_bank_v1_';
+const CANONICAL_Q_MAP = {};
+(function initCanonicalMap(){
+  ['random', 'aim', 'fib'].forEach(grp => {
+    (ALL_SETS[grp] || []).forEach(s => {
+      (s.questions || []).forEach(q => {
+        const key = (q.options ? 'mcq:' : 'fib:') + String(q.q || '').trim();
+        if(!CANONICAL_Q_MAP[key]){
+          CANONICAL_Q_MAP[key] = JSON.parse(JSON.stringify(q));
+        }
+      });
+    });
+  });
+})();
+
+function wrongBankStorageKey(){
+  const uid = (user && user.id) ? String(user.id).toUpperCase().trim() : 'GUEST';
+  return WRONG_BANK_PREFIX + uid;
+}
+function loadWrongBank(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(wrongBankStorageKey()) || '[]');
+    return Array.isArray(raw) ? raw : [];
+  }catch(e){ return []; }
+}
+function saveWrongBank(list){
+  try{
+    localStorage.setItem(wrongBankStorageKey(), JSON.stringify(list));
+  }catch(e){}
+}
+function qSignature(q){
+  return (q.options ? 'mcq:' : 'fib:') + String(q.q || '').trim();
+}
+function recordWrongQuestions(questionsList, userAnswersList, sourceSetLabel){
+  if(!Array.isArray(questionsList) || !questionsList.length) return 0;
+  const bank = loadWrongBank();
+  const idxBySig = new Map(bank.map((item, i) => [qSignature(item), i]));
+  let added = 0;
+
+  questionsList.forEach((q, i) => {
+    const ch = userAnswersList[i];
+    const isIncorrectAttempt = (ch !== null && ch !== undefined && !isRight(q, ch));
+    if(!isIncorrectAttempt) return;
+
+    const sig = qSignature(q);
+    const canon = CANONICAL_Q_MAP[sig] ? JSON.parse(JSON.stringify(CANONICAL_Q_MAP[sig])) : JSON.parse(JSON.stringify(q));
+    if(idxBySig.has(sig)){
+      const existingIdx = idxBySig.get(sig);
+      const prevMisses = bank[existingIdx].missCount || 1;
+      bank[existingIdx] = Object.assign({}, canon, {
+        fromSet: sourceSetLabel || bank[existingIdx].fromSet || '',
+        missCount: prevMisses + 1,
+        lastMissedAt: new Date().toISOString()
+      });
+    }else{
+      const entry = Object.assign({}, canon, {
+        fromSet: sourceSetLabel || '',
+        missCount: 1,
+        lastMissedAt: new Date().toISOString()
+      });
+      idxBySig.set(sig, bank.length);
+      bank.push(entry);
+      added++;
+    }
+  });
+
+  saveWrongBank(bank);
+  renderWrongQuizSection();
+  return added;
+}
+function removeMasteredFromWrongBank(questionsList, userAnswersList){
+  const bank = loadWrongBank();
+  if(!bank.length) return;
+  const rightSigs = new Set();
+  questionsList.forEach((q, i) => {
+    if(isRight(q, userAnswersList[i])) rightSigs.add(qSignature(q));
+  });
+  if(!rightSigs.size) return;
+  const remaining = bank.filter(item => !rightSigs.has(qSignature(item)));
+  saveWrongBank(remaining);
+  renderWrongQuizSection();
+}
+function clearWrongBank(){
+  saveWrongBank([]);
+  renderWrongQuizSection();
+}
+function startWrongQuestionQuiz(kindFilter){
+  if(!user) return;
+  const allWrong = loadWrongBank();
+  const pool = kindFilter
+    ? allWrong.filter(q => (kindFilter === 'fib' ? !q.options : !!q.options))
+    : allWrong;
+  if(!pool.length) return;
+  const labelSuffix = kindFilter === 'fib' ? ' (Blanks)' : (kindFilter === 'mcq' ? ' (MCQs)' : '');
+  startSet({
+    label: 'Wrong Question Quiz' + labelSuffix,
+    type: kindFilter === 'fib' ? 'fib' : 'mcq',
+    isWrongQuiz: true,
+    questions: pool
+  });
+}
+function renderWrongQuizSection(){
+  const mcqBox = document.getElementById('wrongQuizMcqBox');
+  const fibBox = document.getElementById('wrongQuizFibBox');
+  const bank = loadWrongBank();
+  const mcqWrong = bank.filter(q => !!q.options);
+  const fibWrong = bank.filter(q => !q.options);
+
+  if(mcqBox){
+    if(!mcqWrong.length){
+      mcqBox.innerHTML = `<div class="lempty">No wrong MCQ questions collected yet. Any question you answer incorrectly on an MCQ test is automatically added here.</div>`;
+    }else{
+      mcqBox.innerHTML = `
+        <div class="lrow" style="justify-content:space-between;gap:14px;">
+          <div>
+            <div class="lmain" style="font-weight:600;">Wrong Question Quiz — MCQs (${mcqWrong.length} question${mcqWrong.length > 1 ? 's' : ''})</div>
+            <div class="lsub" style="margin-top:3px;">Est. time: ${formatDuration(mcqWrong.length, 30)} &middot; Answered right here removes it from your wrong list</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button type="button" class="primary bbtn" id="startWrongMcqBtn">Start Wrong Quiz</button>
+            <button type="button" class="ghost bbtn" id="clearWrongMcqBtn">Clear</button>
+          </div>
+        </div>`;
+      document.getElementById('startWrongMcqBtn').onclick = () => startWrongQuestionQuiz('mcq');
+      document.getElementById('clearWrongMcqBtn').onclick = () => {
+        if(confirm('Clear all saved wrong MCQ questions?')){
+          const kept = loadWrongBank().filter(q => !q.options);
+          saveWrongBank(kept);
+          renderWrongQuizSection();
+        }
+      };
+    }
+  }
+
+  if(fibBox){
+    if(!fibWrong.length){
+      fibBox.innerHTML = `<div class="lempty">No wrong Fill-in-the-Blank questions collected yet. Any blank you answer incorrectly is automatically added here.</div>`;
+    }else{
+      fibBox.innerHTML = `
+        <div class="lrow" style="justify-content:space-between;gap:14px;">
+          <div>
+            <div class="lmain" style="font-weight:600;">Wrong Question Quiz — Blanks (${fibWrong.length} question${fibWrong.length > 1 ? 's' : ''})</div>
+            <div class="lsub" style="margin-top:3px;">Est. time: ${formatDuration(fibWrong.length, 45)} &middot; Answered right here removes it from your wrong list</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button type="button" class="primary bbtn" id="startWrongFibBtn">Start Wrong Quiz</button>
+            <button type="button" class="ghost bbtn" id="clearWrongFibBtn">Clear</button>
+          </div>
+        </div>`;
+      document.getElementById('startWrongFibBtn').onclick = () => startWrongQuestionQuiz('fib');
+      document.getElementById('clearWrongFibBtn').onclick = () => {
+        if(confirm('Clear all saved wrong Fill-in-the-Blank questions?')){
+          const kept = loadWrongBank().filter(q => !!q.options);
+          saveWrongBank(kept);
+          renderWrongQuizSection();
+        }
+      };
+    }
+  }
 }
 
 // ===== init =====
