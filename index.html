@@ -477,6 +477,7 @@ function showAfterLogin(){
   screenSelect.classList.remove('hidden');
   refreshUserLine();
   renderWrongQuizSection();
+  syncWrongBankFromServer();
   loadBoard();
 }
 document.getElementById('loginBtn').onclick = async ()=>{
@@ -1220,6 +1221,51 @@ function renderWrongQuizSection(){
       };
     }
   }
+}
+
+
+async function syncWrongBankFromServer(){
+  if(!TRACK_ON || !user || !user.id) return;
+  try{
+    const url = TRACK_URL + (TRACK_URL.indexOf('?') >= 0 ? '&' : '?') + 'action=wrong&id=' + encodeURIComponent(user.id) + '&t=' + Date.now();
+    const r = await fetch(url);
+    const j = await r.json();
+    if(!j || !j.ok || !Array.isArray(j.items)) return;
+
+    // Build lookup by (kind + ':' + originalQuestionNumber) from CANONICAL_Q_MAP
+    const byNum = {};
+    Object.keys(CANONICAL_Q_MAP).forEach(sig => {
+      const q = CANONICAL_Q_MAP[sig];
+      const kind = q.options ? 'mcq' : 'fib';
+      const m = String(q.q || '').match(/^(\d+)\./);
+      if(m) byNum[kind + ':' + m[1]] = q;
+    });
+
+    const bank = loadWrongBank();
+    const idxBySig = new Map(bank.map((item, i) => [qSignature(item), i]));
+    let changed = false;
+
+    j.items.forEach(item => {
+      const k = (item.kind === 'fib' ? 'fib' : 'mcq') + ':' + String(item.n || '').trim();
+      const canon = byNum[k];
+      if(!canon) return;
+      const sig = qSignature(canon);
+      if(!idxBySig.has(sig)){
+        idxBySig.set(sig, bank.length);
+        bank.push(Object.assign({}, JSON.parse(JSON.stringify(canon)), {
+          fromSet: item.fromSet || '',
+          missCount: 1,
+          lastMissedAt: new Date().toISOString()
+        }));
+        changed = true;
+      }
+    });
+
+    if(changed){
+      saveWrongBank(bank);
+      renderWrongQuizSection();
+    }
+  }catch(e){}
 }
 
 // ===== init =====
